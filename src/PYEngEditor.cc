@@ -19,27 +19,4 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __PY_ENG_EDITOR_
-#define __PY_ENG_EDITOR_
-
-#include "PYEditor.h"
-
-namespace PY {
-
-class EnglishEditor : public Editor {
-public:
-    EnglishEditor (PinyinProperties &props, Config & config);
-
-    virtual gboolean processKeyEvent (guint keyval, guint keycode, guint modifers);
-    virtual void pageUp (void);
-    virtual void pageDown (void);
-    virtual void cursorUp (void);
-    virtual void cursorDown (void);
-    virtual void update (void);
-    virtual void reset (void);
-    virtual void candidateClicked (guint index, guint button, guint state);
-};
-
-};
-
-#endif
+#include "PYEngEditor.h"
