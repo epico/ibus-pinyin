@@ -24,6 +24,8 @@
 
 #include "PYEditor.h"
 
+typedef struct sqlite3 sqlite3;
+
 namespace PY {
 
 class EnglishEditor : public Editor {
@@ -40,6 +42,13 @@ public:
     virtual void candidateClicked (guint index, guint button, guint state);
 };
 
+private:
+    sqlite3 * m_db;
+
+    String m_sql;   /* sql stmt */
+
+private:
+    static std::unique_ptr<EngEditor> m_instance;
 };
 
 #endif
