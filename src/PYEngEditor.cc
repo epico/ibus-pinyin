@@ -40,3 +40,44 @@ static const char * SQL_DB_INSERT =
     "INSERT INTO english (word, freq) VALUES (\"%s\", \"%f\");";
 
 
+/* Auxiliary Functions */
+
+void
+EnglishEditor::pageUp (void)
+{
+    if ( G_LIKELY(m_lookup_table.pageUp ())) {
+        update();
+    }
+}
+
+void
+EnglishEditor::pageDown (void)
+{
+    if ( G_LIKELY(m_lookup_table.pageDown ())) {
+        update();
+    }
+}
+
+void
+EnglishEditor::cursorUp (void)
+{
+    if ( G_LIKELY(m_lookup_table.cursorUp ())) {
+        update();
+    }
+}
+
+void
+EnglishEditor::cursorDown (void)
+{
+    if ( G_LIKELY(m_lookup_table.cursorDown())) {
+        update();
+    }
+}
+
+void
+EnglishEditor::update (void)
+{
+    updateLookupTable ();
+    updatePreeditText ();
+    updateAuxiliaryText ();
+}
