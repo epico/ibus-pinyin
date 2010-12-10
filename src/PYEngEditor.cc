@@ -20,3 +20,23 @@
  */
 
 #include "PYEngEditor.h"
+
+static const char * SQL_CREATE_DB =
+    "CREATE TABLE IF NOT EXISTS english ("
+    "word TEXT NOT NULL,"
+    "freq FLOAT NOT NULL DEFAULT(0)"
+    ");";
+
+static const char * SQL_DB_LIST = 
+    "SELECT word FROM english WHERE word LIKE \"%s%\" ORDER BY freq DESC;";
+
+static const char * SQL_DB_SELECT = 
+    "SELECT word, freq FROM english WHERE word = \"%s\";";
+
+static const char * SQL_DB_UPDATE =
+    "UPDATE english SET freq = \"%f\" WHERE word = \"%s\";";
+
+static const char * SQL_DB_INSERT =
+    "INSERT INTO english (word, freq) VALUES (\"%s\", \"%f\");";
+
+

@@ -47,6 +47,7 @@ private:
 
     String m_sql;   /* sql stmt */
 
+    LookupTable m_lookup_table;
 private:
     static std::unique_ptr<EngEditor> m_instance;
 };
