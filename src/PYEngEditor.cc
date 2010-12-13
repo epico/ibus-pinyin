@@ -19,6 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <string>
+#include <vector>
+#include <glib.h>
 #include "PYEngEditor.h"
 
 static const char * SQL_CREATE_DB =
@@ -38,6 +41,66 @@ static const char * SQL_DB_UPDATE =
 
 static const char * SQL_DB_INSERT =
     "INSERT INTO english (word, freq) VALUES (\"%s\", \"%f\");";
+
+class EnglishEditor{
+private:
+    sqlite3 * m_sqlite;
+    std::string m_sql;
+
+public:
+    EnglishEditor(){
+        m_sqlite = NULL;
+        m_sql = "";
+    }
+
+    bool isDatabaseExisted(const char * filename) {
+        return g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+    }
+
+    bool createDatabase(const char * filename) {
+        if ( sqlite3_open_v2 ( filename, &m_sqlite,
+                               SQLITE_OPEN_READWRITE | 
+                               SQLITE_OPEN_CREATE, NULL) != SQLITE_OK )
+            return false;
+        /* Create DESCription table */
+        m_sql = "BEGIN TRANSACTION;\n";
+        m_sql << "CREATE TABLE IF NOT EXISTS desc (name TEXT PRIMARY KEY, value TEXT);\n";
+        m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');"
+              << "INSERT OR IGNORE INTO desc VALUES ('uuid', '"<< UUID() << "');\n"
+              << "INSERT OR IGNORE INTO desc VALUES ('hostname', '"<< Hostname () << "');\n"
+              << "INSERT OR IGNORE INTO desc VALUES ('username', '"<< Env("USERNAME") << "');\n"
+              << "INSERT OR IGNORE INTO desc VALUES ('creation-time', datetime());\n";
+        m_sql << "COMMIT;\n";
+        char * errmsg = NULL;
+        int result = sqlite3_exec(m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg);
+        if ( result ) {
+            fprintf(STDERR, "%s\n", errmsg);
+            sqlite3_close(m_sqlite);
+            m_sqlite = NULL;
+            return false;
+        }
+
+        m_sql = "";
+        /* Create Schema */
+        result = sqlite3_exec(m_sqlite, SQL_CREATE_DB, NULL, NULL, &errmsg);
+        if ( result ) {
+            fprintf(STDERR, "%s\n", errmsg);
+            sqlite3_close(m_sqlite);
+            m_sqlite = NULL;
+            return false;
+        }
+        return true;
+    }
+
+    bool openDatabase(const char * filename){
+        /* Check the desc table */
+    }
+
+    bool listWords(const char * prefix, std::vector<std::string> & words);
+    bool getWordInfo(const char * word, float & freq);
+    bool updateWord(const char * word, float freq);
+    bool insertWord(const char * word, float freq);
+};
 
 
 /* Auxiliary Functions */
