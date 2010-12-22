@@ -66,11 +66,8 @@ public:
         m_sql = "BEGIN TRANSACTION;\n";
         m_sql << "CREATE TABLE IF NOT EXISTS desc (name TEXT PRIMARY KEY, value TEXT);\n";
         m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');"
-              << "INSERT OR IGNORE INTO desc VALUES ('uuid', '"<< UUID() << "');\n"
-              << "INSERT OR IGNORE INTO desc VALUES ('hostname', '"<< Hostname () << "');\n"
-              << "INSERT OR IGNORE INTO desc VALUES ('username', '"<< Env("USERNAME") << "');\n"
-              << "INSERT OR IGNORE INTO desc VALUES ('creation-time', datetime());\n";
         m_sql << "COMMIT;\n";
+
         char * errmsg = NULL;
         int result = sqlite3_exec(m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg);
         if ( result ) {
@@ -92,8 +89,9 @@ public:
         return true;
     }
 
-    bool openDatabase(const char * filename){
+    bool openDatabase(const char * system_db, const char * user_db){
         /* Check the desc table */
+        
     }
 
     bool listWords(const char * prefix, std::vector<std::string> & words);
