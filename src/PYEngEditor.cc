@@ -44,16 +44,19 @@ static const char * SQL_DB_INSERT =
 
 class EnglishEditor{
 private:
-    sqlite3 * m_sqlite;
+    sqlite3 * m_system_sql;
+    sqlite3 * m_user_sql;
     std::string m_sql;
 
 public:
     EnglishEditor(){
-        m_sqlite = NULL;
+        m_system_sql = NULL;
+        m_user_sql = NULL;
         m_sql = "";
     }
 
     bool isDatabaseExisted(const char * filename) {
+        /* TODO: Check the desc table */
         return g_file_test(filename, G_FILE_TEST_IS_REGULAR);
     }
 
@@ -90,14 +93,17 @@ public:
     }
 
     bool openDatabase(const char * system_db, const char * user_db){
-        /* Check the desc table */
         
     }
 
+    /* List the words in freq order. */
     bool listWords(const char * prefix, std::vector<std::string> & words);
+    /* Get the sum of the freq of user and system sqlite db */
     bool getWordInfo(const char * word, float & freq);
-    bool updateWord(const char * word, float freq);
-    bool insertWord(const char * word, float freq);
+    /* Update the freq with delta value. */
+    bool updateWord(const char * word, float delta);
+    /* Insert the word into user db with the initial freq. */
+    bool insertWord(const char * word, float initial_freq);
 };
 
 
