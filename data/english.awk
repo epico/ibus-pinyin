@@ -11,8 +11,10 @@ BEGIN {
     print "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');";
 }
 
+    # Insert data into english table
     {   printf "INSERT INTO english (word, freq) VALUES (\"%s\", \"%f\");\n", $1, $2}
 
+    #quit sqlite3
 END {
     print ".exit";
 }
