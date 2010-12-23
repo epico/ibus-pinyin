@@ -44,8 +44,8 @@ static const char * SQL_DB_INSERT =
 
 class EnglishEditor{
 private:
-    sqlite3 * m_system_sql;
-    sqlite3 * m_user_sql;
+    sqlite3 * m_system_db;
+    sqlite3 * m_user_db;
     std::string m_sql;
 
 public:
@@ -56,12 +56,21 @@ public:
     }
 
     bool isDatabaseExisted(const char * filename) {
-        /* TODO: Check the desc table */
-        return g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+         gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+         sqlite3 * tmp_db = NULL;
+         if ( sqlite3_open_v2 ( filename, &tmp_db,
+                                SQLITE_OPEN_READONLY, NULL) != SQLITE_OK )
+             return false;
+         /* TODO: Check the desc table */
+         m_sql = "SELECT value FROM desc WHERE 'name' = 'version';";
+         
+
+         return true;
     }
 
     bool createDatabase(const char * filename) {
-        if ( sqlite3_open_v2 ( filename, &m_sqlite,
+        sqlite3 * tmp_db = NULL;
+        if ( sqlite3_open_v2 ( filename, &tmp_db,
                                SQLITE_OPEN_READWRITE | 
                                SQLITE_OPEN_CREATE, NULL) != SQLITE_OK )
             return false;
@@ -72,21 +81,19 @@ public:
         m_sql << "COMMIT;\n";
 
         char * errmsg = NULL;
-        int result = sqlite3_exec(m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg);
+        int result = sqlite3_exec(tmp_db, m_sql.c_str(), NULL, NULL, &errmsg);
         if ( result ) {
             fprintf(STDERR, "%s\n", errmsg);
-            sqlite3_close(m_sqlite);
-            m_sqlite = NULL;
+            sqlite3_close(tmp_db);
             return false;
         }
 
         m_sql = "";
         /* Create Schema */
-        result = sqlite3_exec(m_sqlite, SQL_CREATE_DB, NULL, NULL, &errmsg);
+        result = sqlite3_exec(tmp_db, SQL_CREATE_DB, NULL, NULL, &errmsg);
         if ( result ) {
             fprintf(STDERR, "%s\n", errmsg);
-            sqlite3_close(m_sqlite);
-            m_sqlite = NULL;
+            sqlite3_close(tmp_db);
             return false;
         }
         return true;
