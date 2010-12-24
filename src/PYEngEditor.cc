@@ -19,56 +19,89 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <assert.h>
+#include <string.h>
 #include <string>
 #include <vector>
+#include <stdio.h>
+#include <sqlite3.h>
 #include <glib.h>
+#include "PYLookupTable.h"
 #include "PYEngEditor.h"
 
 static const char * SQL_CREATE_DB =
     "CREATE TABLE IF NOT EXISTS english ("
-    "word TEXT NOT NULL,"
+    "word TEXT NOT NULL PRIMARY KEY,"
     "freq FLOAT NOT NULL DEFAULT(0)"
     ");";
 
+static const char * SQL_ATTACH_DB =
+    "ATTACH DATABASE '%s' AS user;";
+
 static const char * SQL_DB_LIST = 
-    "SELECT word FROM english WHERE word LIKE \"%s%\" ORDER BY freq DESC;";
+    "SELECT word FROM ( SELECT * FROM english UNION ALL SELECT * FROM user.english) WHERE word LIKE \"%s%%\" GROUP BY word ORDER BY SUM(freq) DESC;";
 
 static const char * SQL_DB_SELECT = 
-    "SELECT word, freq FROM english WHERE word = \"%s\";";
+    "SELECT word, freq FROM user.english WHERE word = \"%s\";";
 
 static const char * SQL_DB_UPDATE =
-    "UPDATE english SET freq = \"%f\" WHERE word = \"%s\";";
+    "UPDATE user.english SET freq = \"%f\" WHERE word = \"%s\";";
 
 static const char * SQL_DB_INSERT =
-    "INSERT INTO english (word, freq) VALUES (\"%s\", \"%f\");";
+    "INSERT INTO user.english (word, freq) VALUES (\"%s\", \"%f\");";
+
+namespace PY {
 
 class EnglishEditor{
 private:
-    sqlite3 * m_system_db;
-    sqlite3 * m_user_db;
+    sqlite3 * m_sqlite;
     std::string m_sql;
 
 public:
     EnglishEditor(){
-        m_system_sql = NULL;
-        m_user_sql = NULL;
+        m_sqlite = NULL;
         m_sql = "";
     }
 
     bool isDatabaseExisted(const char * filename) {
          gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+         if (!result)
+             return false;
+
          sqlite3 * tmp_db = NULL;
          if ( sqlite3_open_v2 ( filename, &tmp_db,
                                 SQLITE_OPEN_READONLY, NULL) != SQLITE_OK )
              return false;
          /* TODO: Check the desc table */
+         sqlite3_stmt * stmt = NULL;
+         const char * tail = NULL;
          m_sql = "SELECT value FROM desc WHERE 'name' = 'version';";
-         
-
+         int result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
+         assert(result == SQLITE_OK);
+         result = sqlite3_step(stmt);
+         if ( result != SQLITE_ROW)
+             return false;
+         result = sqlite3_column_type (stmt, 0);
+         if ( result != SQLITE_TEXT)
+             return false;
+         const char * version = sqlite3_column_text(stmt, 0);
+         result = sqlite3_finalize(stmt);
+         assert ( result == SQLITE_OK);
+         if ( strcmp("1.2.0", version ) != 0)
+             return false;
+         sqlite3_close(tmp_db);
          return true;
     }
 
     bool createDatabase(const char * filename) {
+        /* unlink the old database. */
+        gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+        if ( result ) {
+            int result = g_unlink(filename);
+            if ( result == -1 )
+                return false;
+        }
+
         sqlite3 * tmp_db = NULL;
         if ( sqlite3_open_v2 ( filename, &tmp_db,
                                SQLITE_OPEN_READWRITE | 
@@ -105,7 +138,7 @@ public:
 
     /* List the words in freq order. */
     bool listWords(const char * prefix, std::vector<std::string> & words);
-    /* Get the sum of the freq of user and system sqlite db */
+    /* Get the freq of user sqlite db. */
     bool getWordInfo(const char * word, float & freq);
     /* Update the freq with delta value. */
     bool updateWord(const char * word, float delta);
@@ -155,3 +188,6 @@ EnglishEditor::update (void)
     updatePreeditText ();
     updateAuxiliaryText ();
 }
+
+
+};

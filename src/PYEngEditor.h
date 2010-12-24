@@ -40,10 +40,11 @@ public:
     virtual void update (void);
     virtual void reset (void);
     virtual void candidateClicked (guint index, guint button, guint state);
-};
 
 private:
     LookupTable m_lookup_table;
+};
+
 };
 
 #endif
