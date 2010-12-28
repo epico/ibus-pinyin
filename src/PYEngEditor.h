@@ -42,7 +42,15 @@ public:
     virtual void candidateClicked (guint index, guint button, guint state);
 
 private:
+
+    void updateLookupTable (void);
+    void updatePreeditText (void);
+    void updateAuxiliaryText (void);
+
     LookupTable m_lookup_table;
+
+    String m_preedit_text;
+    String m_auxiliary_text;
 };
 
 };

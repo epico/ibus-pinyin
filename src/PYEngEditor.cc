@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <sqlite3.h>
 #include <glib.h>
+#include <glib/gstdio.h>
+#include "PYString.h"
 #include "PYLookupTable.h"
 #include "PYEngEditor.h"
 
@@ -52,13 +54,13 @@ static const char * SQL_DB_INSERT =
 
 namespace PY {
 
-class EnglishEditor{
+class EnglishDatabase{
 private:
     sqlite3 * m_sqlite;
-    std::string m_sql;
+    String m_sql;
 
 public:
-    EnglishEditor(){
+    EnglishDatabase(){
         m_sqlite = NULL;
         m_sql = "";
     }
@@ -76,7 +78,7 @@ public:
          sqlite3_stmt * stmt = NULL;
          const char * tail = NULL;
          m_sql = "SELECT value FROM desc WHERE 'name' = 'version';";
-         int result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
+         result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
          assert(result == SQLITE_OK);
          result = sqlite3_step(stmt);
          if ( result != SQLITE_ROW)
@@ -84,7 +86,7 @@ public:
          result = sqlite3_column_type (stmt, 0);
          if ( result != SQLITE_TEXT)
              return false;
-         const char * version = sqlite3_column_text(stmt, 0);
+         const char * version = (const char *) sqlite3_column_text(stmt, 0);
          result = sqlite3_finalize(stmt);
          assert ( result == SQLITE_OK);
          if ( strcmp("1.2.0", version ) != 0)
@@ -95,8 +97,8 @@ public:
 
     bool createDatabase(const char * filename) {
         /* unlink the old database. */
-        gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
-        if ( result ) {
+        gboolean retval = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+        if ( retval ) {
             int result = g_unlink(filename);
             if ( result == -1 )
                 return false;
@@ -110,13 +112,13 @@ public:
         /* Create DESCription table */
         m_sql = "BEGIN TRANSACTION;\n";
         m_sql << "CREATE TABLE IF NOT EXISTS desc (name TEXT PRIMARY KEY, value TEXT);\n";
-        m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');"
+        m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');";
         m_sql << "COMMIT;\n";
 
         char * errmsg = NULL;
         int result = sqlite3_exec(tmp_db, m_sql.c_str(), NULL, NULL, &errmsg);
         if ( result ) {
-            fprintf(STDERR, "%s\n", errmsg);
+            fprintf(stderr, "%s\n", errmsg);
             sqlite3_close(tmp_db);
             return false;
         }
@@ -125,7 +127,7 @@ public:
         /* Create Schema */
         result = sqlite3_exec(tmp_db, SQL_CREATE_DB, NULL, NULL, &errmsg);
         if ( result ) {
-            fprintf(STDERR, "%s\n", errmsg);
+            fprintf(stderr, "%s\n", errmsg);
             sqlite3_close(tmp_db);
             return false;
         }
@@ -189,5 +191,39 @@ EnglishEditor::update (void)
     updateAuxiliaryText ();
 }
 
+void
+EnglishEditor::updateLookupTable (void)
+{
+    if (m_lookup_table.size ()) {
+        Editor::updateLookupTableFast (m_lookup_table, TRUE);
+    }
+    else {
+        hideLookupTable ();
+    }
+}
+
+void
+EnglishEditor::updatePreeditText (void)
+{
+    if ( G_UNLIKELY(m_preedit_text.empty ()) ) {
+        hidePreeditText ();
+        return;
+    }
+
+    StaticText preedit_text (m_preedit_text);
+    Editor::updatePreeditText (preedit_text, m_cursor, TRUE);
+}
+
+void
+EnglishEditor::updateAuxiliaryText (void)
+{
+    if ( G_UNLIKELY(m_auxiliary_text.empty ()) ) {
+        hideAuxiliaryText ();
+        return;
+    }
+    
+    StaticText aux_text (m_auxiliary_text);
+    Editor::updateAuxiliaryText (aux_text, TRUE);
+}
 
 };
