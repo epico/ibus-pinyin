@@ -750,7 +750,7 @@ void
 ExtEditor::updateLookupTable (void)
 {
     if (m_lookup_table.size ()) {
-        Editor::updateLookupTable (m_lookup_table, TRUE);
+        Editor::updateLookupTableFast (m_lookup_table, TRUE);
     }
     else {
         hideLookupTable ();
