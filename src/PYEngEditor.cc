@@ -135,11 +135,38 @@ public:
     }
 
     bool openDatabase(const char * system_db, const char * user_db){
-        
+        if ( !isDatabaseExisted(system_db) )
+            return false;
+        if ( !isDatabaseExisted(user_db)) {
+            bool result = createDatabase(user_db);
+            if ( !result )
+                return false;
+        }
+        /* do database attach here. :) */
+        if ( sqlite3_open_v2( system_db, &m_sqlite,
+                              SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK ) {
+            sqlite3_close(m_sqlite);
+            m_sqlite = NULL;                
+            return false;
+        }
+
+        char * errmsg = NULL;
+        m_sql = "";
+        m_sql.printf(SQL_ATTACH_DB, user_db);
+        int result = sqlite3_exec(m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg);
+        if ( result ) {
+            fprintf(stderr, "%s\n", errmsg);
+            sqlite3_close(tmp_db);
+            return false;
+        }
+        return true;
     }
 
     /* List the words in freq order. */
-    bool listWords(const char * prefix, std::vector<std::string> & words);
+    bool listWords(const char * prefix, std::vector<std::string> & words){
+        
+    }
+
     /* Get the freq of user sqlite db. */
     bool getWordInfo(const char * word, float & freq);
     /* Update the freq with delta value. */
