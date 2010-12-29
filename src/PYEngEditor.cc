@@ -59,6 +59,17 @@ private:
     sqlite3 * m_sqlite;
     String m_sql;
 
+    bool executeSQL (){
+        assert(m_sqlite != NULL);
+        gchar * errmsg = NULL;
+        if ( sqlite3_exec (m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
+             != SQLITE_OK) {
+            g_warning ("%s: %s", errmsg, m_sql.c_str());
+            sqlite3_free (errmsg);
+            return false;
+        }
+        return true;
+    }
 public:
     EnglishDatabase(){
         m_sqlite = NULL;
@@ -115,22 +126,18 @@ public:
         m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');";
         m_sql << "COMMIT;\n";
 
-        char * errmsg = NULL;
-        int result = sqlite3_exec(tmp_db, m_sql.c_str(), NULL, NULL, &errmsg);
-        if ( result ) {
-            fprintf(stderr, "%s\n", errmsg);
+        if ( !executeSQL() ) {
             sqlite3_close(tmp_db);
             return false;
         }
 
-        m_sql = "";
         /* Create Schema */
-        result = sqlite3_exec(tmp_db, SQL_CREATE_DB, NULL, NULL, &errmsg);
-        if ( result ) {
-            fprintf(stderr, "%s\n", errmsg);
+        m_sql = SQL_CREATE_DB;
+        if ( !executeSQL() ) {
             sqlite3_close(tmp_db);
             return false;
         }
+        m_sql = "";
         return true;
     }
 
@@ -153,9 +160,7 @@ public:
         char * errmsg = NULL;
         m_sql = "";
         m_sql.printf(SQL_ATTACH_DB, user_db);
-        int result = sqlite3_exec(m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg);
-        if ( result ) {
-            fprintf(stderr, "%s\n", errmsg);
+        if ( !executeSQL() ) {
             sqlite3_close(tmp_db);
             return false;
         }
