@@ -83,8 +83,11 @@ public:
 
          sqlite3 * tmp_db = NULL;
          if ( sqlite3_open_v2 ( filename, &tmp_db,
-                                SQLITE_OPEN_READONLY, NULL) != SQLITE_OK )
+                                SQLITE_OPEN_READONLY, NULL) != SQLITE_OK ){
+             sqlite3_close(tmp_db);
              return false;
+         }
+
          /* TODO: Check the desc table */
          sqlite3_stmt * stmt = NULL;
          const char * tail = NULL;
@@ -118,8 +121,11 @@ public:
         sqlite3 * tmp_db = NULL;
         if ( sqlite3_open_v2 ( filename, &tmp_db,
                                SQLITE_OPEN_READWRITE | 
-                               SQLITE_OPEN_CREATE, NULL) != SQLITE_OK )
+                               SQLITE_OPEN_CREATE, NULL) != SQLITE_OK ) {
+            sqlite3_close(tmp_db);
             return false;
+        }
+
         /* Create DESCription table */
         m_sql = "BEGIN TRANSACTION;\n";
         m_sql << "CREATE TABLE IF NOT EXISTS desc (name TEXT PRIMARY KEY, value TEXT);\n";
@@ -161,7 +167,7 @@ public:
         m_sql = "";
         m_sql.printf(SQL_ATTACH_DB, user_db);
         if ( !executeSQL() ) {
-            sqlite3_close(tmp_db);
+            sqlite3_close(m_sqlite);
             return false;
         }
         return true;
