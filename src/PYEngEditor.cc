@@ -175,7 +175,26 @@ public:
 
     /* List the words in freq order. */
     bool listWords(const char * prefix, std::vector<std::string> & words){
-        
+        sqlite3_stmt * stmt = NULL;
+        const char * tail = NULL;
+        words.clear();
+        m_sql.printf(SQL_DB_LIST, prefix);
+        int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
+        assert(result == SQLITE_OK);
+        result = sqlite3_step(stmt);
+        while ( result == SQLITE_ROW ){
+            /* get the words. */
+            result = sqlite3_column_type (stmt, 0);
+            if ( result != SQLITE_TEXT)
+                return false;
+            const char * word = sqlite3_column_text(stmt, 0);
+            words.push_back (word);
+            result = sqlite3_step(stmt);
+        }
+        sqlite3_finalize(stmt);
+        if ( result != SQLITE_DONE )
+            return false;
+        return true;
     }
 
     /* Get the freq of user sqlite db. */
