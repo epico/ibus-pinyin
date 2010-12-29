@@ -44,7 +44,7 @@ static const char * SQL_DB_LIST =
     "SELECT word FROM ( SELECT * FROM english UNION ALL SELECT * FROM user.english) WHERE word LIKE \"%s%%\" GROUP BY word ORDER BY SUM(freq) DESC;";
 
 static const char * SQL_DB_SELECT = 
-    "SELECT word, freq FROM user.english WHERE word = \"%s\";";
+    "SELECT freq FROM user.english WHERE word = \"%s\";";
 
 static const char * SQL_DB_UPDATE =
     "UPDATE user.english SET freq = \"%f\" WHERE word = \"%s\";";
@@ -68,10 +68,17 @@ private:
             sqlite3_free (errmsg);
             return false;
         }
+        m_sql.clear();
         return true;
     }
 public:
     EnglishDatabase(){
+        m_sqlite = NULL;
+        m_sql = "";
+    }
+
+    ~EnglishDatabase(){
+        sqlite3_close(m_sqlite);
         m_sqlite = NULL;
         m_sql = "";
     }
@@ -88,7 +95,7 @@ public:
              return false;
          }
 
-         /* TODO: Check the desc table */
+         /* Check the desc table */
          sqlite3_stmt * stmt = NULL;
          const char * tail = NULL;
          m_sql = "SELECT value FROM desc WHERE 'name' = 'version';";
@@ -143,7 +150,6 @@ public:
             sqlite3_close(tmp_db);
             return false;
         }
-        m_sql = "";
         return true;
     }
 
@@ -164,10 +170,10 @@ public:
         }
 
         char * errmsg = NULL;
-        m_sql = "";
         m_sql.printf(SQL_ATTACH_DB, user_db);
         if ( !executeSQL() ) {
             sqlite3_close(m_sqlite);
+            m_sqlite = NULL;
             return false;
         }
         return true;
@@ -187,7 +193,7 @@ public:
             result = sqlite3_column_type (stmt, 0);
             if ( result != SQLITE_TEXT)
                 return false;
-            const char * word = sqlite3_column_text(stmt, 0);
+            const char * word = (const char *)sqlite3_column_text(stmt, 0);
             words.push_back (word);
             result = sqlite3_step(stmt);
         }
@@ -198,11 +204,35 @@ public:
     }
 
     /* Get the freq of user sqlite db. */
-    bool getWordInfo(const char * word, float & freq);
+    bool getWordInfo(const char * word, float & freq){
+        sqlite3_stmt * stmt = NULL;
+        const char * tail = NULL;
+        m_sql.printf(SQL_DB_SELECT, word);
+        int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
+        assert( result == SQLITE_OK);
+        result = sqlite3_step(stmt);
+        if ( result != SQLITE_ROW)
+            return false;
+        result = sqlite3_column_type(stmt, 0);
+        if ( result != SQLITE_FLOAT)
+            return false;
+        freq = sqlite3_column_double(stmt, 0);
+        result = sqlite3_finalize(stmt);
+        assert ( result == SQLITE_OK);
+        return true;
+    }
+
     /* Update the freq with delta value. */
-    bool updateWord(const char * word, float delta);
+    bool updateWord(const char * word, float freq){
+        m_sql.printf(SQL_DB_UPDATE, freq, word);
+        return executeSQL();
+    }
+
     /* Insert the word into user db with the initial freq. */
-    bool insertWord(const char * word, float initial_freq);
+    bool insertWord(const char * word, float freq){
+        m_sql.printf(SQL_DB_INSERT, word, freq);
+        return executeSQL();
+    }
 };
 
 
