@@ -233,6 +233,53 @@ public:
     }
 };
 
+gboolean
+EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifers){
+    /* TODO: implement this. */
+}
+
+gboolean
+EnglishEditor::processEnter(guint keyval){
+    if ( keyval != IBUS_Return )
+        return FALSE;
+
+    if ( m_text.length () == 0 )
+        return FALSE;
+
+    Text text(m_text);
+    commitText (text);
+    reset ();
+    return TRUE;
+}
+
+gboolean
+EnglishEditor::processSpace(guint keyval)
+{
+    if (!(keyval == IBUS_space || keyval == IBUS_KP_Space))
+        return FALSE;
+
+    guint cursor_pos = m_lookup_table.cursorPos ();
+    return selectCandidate (cursor_pos);
+}
+
+void
+EnglishEditor::candidateClicked (guint index, guint button, guint state)
+{
+    selectCandidateInPage(index);
+}
+
+gboolean
+EnglishEditor::selectCandidateInPage (guint index)
+{
+    guint page_size = m_lookup_table.pageSize ();
+    guint cursor_pos = m_lookup_table.cursorPos ();
+
+    if (G_UNLIKELY(index >= page_size))
+        return FALSE;
+    index += (cursor_pos / page_size) * page_size;
+
+    return selectCandidate (index);
+}
 
 /* Auxiliary Functions */
 

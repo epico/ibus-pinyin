@@ -47,6 +47,16 @@ private:
     void updatePreeditText (void);
     void updateAuxiliaryText (void);
 
+    gboolean selectCandidateInPage (guint index);
+    gboolean selectCandidate (guint index);
+
+    gboolean processSpace(guint keyval);
+    gboolean processEnter(guint keyval);
+
+    gboolean processLabelKey(guint keyval);
+    gboolean processEditKey(guint keyval);
+    gboolean processPageKey(guint keyval);
+
     LookupTable m_lookup_table;
 
     String m_preedit_text;
