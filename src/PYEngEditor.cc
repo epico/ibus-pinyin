@@ -59,10 +59,9 @@ private:
     sqlite3 * m_sqlite;
     String m_sql;
 
-    bool executeSQL (){
-        assert(m_sqlite != NULL);
+    bool executeSQL (sqlite3 * sqlite){
         gchar * errmsg = NULL;
-        if ( sqlite3_exec (m_sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
+        if ( sqlite3_exec (sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
              != SQLITE_OK) {
             g_warning ("%s: %s", errmsg, m_sql.c_str());
             sqlite3_free (errmsg);
@@ -98,7 +97,7 @@ public:
          /* Check the desc table */
          sqlite3_stmt * stmt = NULL;
          const char * tail = NULL;
-         m_sql = "SELECT value FROM desc WHERE 'name' = 'version';";
+         m_sql = "SELECT value FROM desc WHERE name = 'version';";
          result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
          assert(result == SQLITE_OK);
          result = sqlite3_step(stmt);
@@ -108,10 +107,10 @@ public:
          if ( result != SQLITE_TEXT)
              return false;
          const char * version = (const char *) sqlite3_column_text(stmt, 0);
-         result = sqlite3_finalize(stmt);
-         assert ( result == SQLITE_OK);
          if ( strcmp("1.2.0", version ) != 0)
              return false;
+         result = sqlite3_finalize(stmt);
+         assert ( result == SQLITE_OK);
          sqlite3_close(tmp_db);
          return true;
     }
@@ -139,14 +138,14 @@ public:
         m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');";
         m_sql << "COMMIT;\n";
 
-        if ( !executeSQL() ) {
+        if ( !executeSQL(tmp_db) ) {
             sqlite3_close(tmp_db);
             return false;
         }
 
         /* Create Schema */
         m_sql = SQL_CREATE_DB;
-        if ( !executeSQL() ) {
+        if ( !executeSQL(tmp_db) ) {
             sqlite3_close(tmp_db);
             return false;
         }
@@ -169,9 +168,8 @@ public:
             return false;
         }
 
-        char * errmsg = NULL;
         m_sql.printf(SQL_ATTACH_DB, user_db);
-        if ( !executeSQL() ) {
+        if ( !executeSQL(m_sqlite) ) {
             sqlite3_close(m_sqlite);
             m_sqlite = NULL;
             return false;
@@ -225,13 +223,13 @@ public:
     /* Update the freq with delta value. */
     bool updateWord(const char * word, float freq){
         m_sql.printf(SQL_DB_UPDATE, freq, word);
-        return executeSQL();
+        return executeSQL(m_sqlite);
     }
 
     /* Insert the word into user db with the initial freq. */
     bool insertWord(const char * word, float freq){
         m_sql.printf(SQL_DB_INSERT, word, freq);
-        return executeSQL();
+        return executeSQL(m_sqlite);
     }
 };
 
