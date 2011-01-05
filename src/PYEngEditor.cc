@@ -311,7 +311,10 @@ EnglishEditor::updateAuxiliaryText (void)
     Editor::updateAuxiliaryText (aux_text, TRUE);
 }
 
-/* using static initialize to test english database here. */
+
+#if 0
+
+/* using static initializor to test english database here. */
 static class TestEnglishDatabase{
 public:
     TestEnglishDatabase(){
@@ -322,8 +325,9 @@ public:
         assert(retval);
         retval = db->openDatabase("english.db", "english-user.db");
         assert(retval);
-        printf("english database test ok.");
+        printf("english database test ok.\n");
     }
 } test_english_database;
 
+#endif
 };

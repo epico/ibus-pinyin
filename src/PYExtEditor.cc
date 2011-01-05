@@ -282,7 +282,7 @@ ExtEditor::processSpace (guint keyval)
 gboolean
 ExtEditor::processEnter(guint keyval)
 {
-    if ( !(keyval == IBUS_Return) )
+    if ( keyval != IBUS_Return )
         return FALSE;
 
     if ( m_text.length () == 0 )
