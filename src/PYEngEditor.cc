@@ -27,6 +27,7 @@
 #include <sqlite3.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include "PYConfig.h"
 #include "PYString.h"
 #include "PYLookupTable.h"
 #include "PYEngEditor.h"
@@ -234,8 +235,63 @@ public:
 };
 
 gboolean
-EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifers){
-    /* TODO: implement this. */
+EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifiers)
+{
+    //IBUS_SHIFT_MASK is removed.
+    modifiers &= (IBUS_CONTROL_MASK |
+                  IBUS_MOD1_MASK |
+                  IBUS_SUPER_MASK |
+                  IBUS_HYPER_MASK |
+                  IBUS_META_MASK |
+                  IBUS_LOCK_MASK);
+    if ( modifiers )
+        return FALSE;
+
+    //handle backspace/delete here.
+    if (processEditKey (keyval))
+        return TRUE;
+
+    //handle page/cursor up/down here.
+    if (processPageKey (keyval))
+        return TRUE;
+
+    //handle label key select here.
+    if (processLabelKey (keyval))
+        return TRUE;
+
+    if (processSpace (keyval))
+        return TRUE;
+
+    if (processEnter (keyval))
+        return TRUE;
+
+    m_cursor = std::min (m_cursor, (guint)m_text.length ());
+
+    /* Remember the input string. */
+    switch (m_cursor) {
+    case 0: //Empty input string
+        {
+            g_return_val_if_fail ( 'v' == keyval, FALSE);
+            if ( 'v' == keyval ) {
+                m_text.insert (m_cursor, keyval);
+                m_cursor++;
+            }
+        }
+        break;
+    default: //append string
+        {
+            g_return_val_if_fail ( 'v' == m_text[0], FALSE);
+            if (isalpha (keyval)) {
+                m_text.insert (m_cursor, keyval);
+                m_cursor++;
+            }
+        }
+        break;
+    }
+    /* Deal other staff with updateStateFromInput (). */
+    updateStateFromInput ();
+    update ();
+    return TRUE;
 }
 
 gboolean
@@ -459,6 +515,47 @@ EnglishEditor::updateAuxiliaryText (void)
     Editor::updateAuxiliaryText (aux_text, TRUE);
 }
 
+gboolean
+EnglishEditor::removeCharBefore (void)
+{
+    if (G_UNLIKELY( m_cursor <= 0 )) {
+        m_cursor = 0;
+        return FALSE;
+    }
+
+    if (G_UNLIKELY( m_cursor > m_text.length () )) {
+        m_cursor = m_text.length ();
+        return FALSE;
+    }
+
+    m_text.erase (m_cursor - 1, 1);
+    m_cursor = std::max (0, static_cast<int>(m_cursor) - 1);
+    return TRUE;
+}
+
+gboolean
+EnglishEditor::removeCharAfter (void)
+{
+    if (G_UNLIKELY( m_cursor < 0 )) {
+        m_cursor = 0;
+        return FALSE;
+    }
+
+    if (G_UNLIKELY( m_cursor >= m_text.length () )) {
+        m_cursor = m_text.length ();
+        return FALSE;
+    }
+
+    m_text.erase (m_cursor, 1);
+    m_cursor = std::min (m_cursor, (guint) m_text.length ());
+    return TRUE;
+}
+
+bool
+EnglishEditor::updateStateFromInput (void)
+{
+    /* TODO:: implement this. */
+}
 
 #if 0
 

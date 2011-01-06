@@ -54,12 +54,14 @@ private:
     gboolean processSpace(guint keyval);
     gboolean processEnter(guint keyval);
 
+    gboolean removeCharBefore (void);
+    gboolean removeCharAfter (void);
+
     gboolean processLabelKey(guint keyval);
     gboolean processEditKey(guint keyval);
     gboolean processPageKey(guint keyval);
 
-
-
+    /* variables */
     LookupTable m_lookup_table;
 
     String m_preedit_text;
