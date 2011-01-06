@@ -42,6 +42,7 @@ public:
     virtual void candidateClicked (guint index, guint button, guint state);
 
 private:
+    bool updateStateFromInput (void);
 
     void updateLookupTable (void);
     void updatePreeditText (void);
@@ -56,6 +57,8 @@ private:
     gboolean processLabelKey(guint keyval);
     gboolean processEditKey(guint keyval);
     gboolean processPageKey(guint keyval);
+
+
 
     LookupTable m_lookup_table;
 

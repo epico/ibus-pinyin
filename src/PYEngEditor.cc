@@ -239,6 +239,94 @@ EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifers){
 }
 
 gboolean
+EnglishEditor::processEditKey (guint keyval)
+{
+    switch (keyval) {
+    case IBUS_Delete:
+    case IBUS_KP_Delete:
+        removeCharAfter ();
+        updateStateFromInput ();
+        update ();
+        return TRUE;
+    case IBUS_BackSpace:
+        removeCharBefore ();
+        updateStateFromInput ();
+        update();
+        return TRUE;
+    }
+    return FALSE;
+}
+
+gboolean
+EnglishEditor::processPageKey (guint keyval)
+{
+    switch (keyval) {
+    case IBUS_comma:
+        if (m_config.commaPeriodPage ()) {
+            pageUp ();
+            return TRUE;
+        }
+        break;
+    case IBUS_minus:
+        if (m_config.minusEqualPage ()) {
+            pageUp ();
+            return TRUE;
+        }
+        break;
+    case IBUS_period:
+        if (m_config.commaPeriodPage ()) {
+            pageDown ();
+            return TRUE;
+        }
+        break;
+    case IBUS_equal:
+        if (m_config.minusEqualPage ()) {
+            pageDown ();
+            return TRUE;
+        }
+        break;
+    case IBUS_Up:
+    case IBUS_KP_Up:
+        cursorUp ();
+        return TRUE;
+
+    case IBUS_Down:
+    case IBUS_KP_Down:
+        cursorDown ();
+        return TRUE;
+
+    case IBUS_Page_Up:
+    case IBUS_KP_Page_Up:
+        pageUp ();
+        return TRUE;
+
+    case IBUS_Page_Down:
+    case IBUS_KP_Page_Down:
+        pageDown ();
+        return TRUE;
+
+    case IBUS_Escape:
+        reset ();
+        return TRUE;
+    }
+    return FALSE;
+}
+
+gboolean
+EnglishEditor::processLabelKey (guint keyval)
+{
+    switch (keyval) {
+    case '1' ... '9':
+        return selectCandidateInPage (keyval - '1');
+        break;
+    case '0':
+        return selectCandidateInPage (9);
+        break;
+    }
+    return FALSE;
+}
+
+gboolean
 EnglishEditor::processEnter(guint keyval){
     if ( keyval != IBUS_Return )
         return FALSE;
@@ -279,6 +367,19 @@ EnglishEditor::selectCandidateInPage (guint index)
     index += (cursor_pos / page_size) * page_size;
 
     return selectCandidate (index);
+}
+
+gboolean
+EnglishEditor::selectCandidate (guint index)
+{
+    if ( index >= m_lookup_table.size ())
+        return FALSE;
+
+    IBusText * candidate = m_lookup_table.getCandidate(index);
+    Text text(candidate);
+    commitText (text);
+    reset ();
+    return TRUE;
 }
 
 /* Auxiliary Functions */
