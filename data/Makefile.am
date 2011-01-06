@@ -18,9 +18,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+WORDLIST = wordlist
+ENGLISH_DB = english.db
 
 SUBDIRS = \
 	db \
 	icons \
 	$(NULL)
 
+
+EXTRA_DIST = \
+	$(ENGLISH_DB) \
+	$(NULL)
+
+$(ENGLISH_DB): $(WORDLIST)
+	gawk -f english.awk $< |sqlite3 $@
