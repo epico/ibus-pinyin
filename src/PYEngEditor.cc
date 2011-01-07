@@ -438,6 +438,37 @@ EnglishEditor::selectCandidate (guint index)
     return TRUE;
 }
 
+bool
+EnglishEditor::updateStateFromInput (void)
+{
+    /* Do parse and candidates update here. */
+    /* prefix v double check here. */
+    if ( !m_text.length () ) {
+        m_preedit_text = "";
+        m_auxiliary_text = "";
+        m_cursor = 0;
+        clearLookupTable ();
+        return FALSE;
+    }
+
+    if ( ! 'v' == m_text[0] ){
+        g_warning ("v is expected in m_text string.\n");
+        return FALSE;
+    }
+
+    m_auxiliary_text = "v";
+    if ( 1 == m_text.length () ) {
+        return TRUE;
+    }
+
+    m_auxiliary_text += " ";
+
+    String prefix = m_text.substr(1);
+    m_auxiliary_text += prefix;
+
+    /* TODO: implement lookup table candidate fill here. */
+}
+
 /* Auxiliary Functions */
 
 void
@@ -478,6 +509,22 @@ EnglishEditor::update (void)
     updateLookupTable ();
     updatePreeditText ();
     updateAuxiliaryText ();
+}
+
+void
+EnglishEditor::reset (void)
+{
+    m_text = "";
+    updateStateFromInput ();
+    update ();
+}
+
+void
+EnglishEditor::clearLookupTable (void)
+{
+    m_lookup_table.clear ();
+    m_lookup_table.setPageSize (m_config.pageSize ());
+    m_lookup_table.setOrientation (m_config.orientation ());
 }
 
 void
@@ -549,12 +596,6 @@ EnglishEditor::removeCharAfter (void)
     m_text.erase (m_cursor, 1);
     m_cursor = std::min (m_cursor, (guint) m_text.length ());
     return TRUE;
-}
-
-bool
-EnglishEditor::updateStateFromInput (void)
-{
-    /* TODO:: implement this. */
 }
 
 #if 0

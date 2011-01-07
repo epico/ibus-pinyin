@@ -44,6 +44,7 @@ public:
 private:
     bool updateStateFromInput (void);
 
+    void clearLookupTable (void);
     void updateLookupTable (void);
     void updatePreeditText (void);
     void updateAuxiliaryText (void);
