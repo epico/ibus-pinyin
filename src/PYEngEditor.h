@@ -28,6 +28,8 @@ typedef struct sqlite3 sqlite3;
 
 namespace PY {
 
+class EnglishDatabase;
+
 class EnglishEditor : public Editor {
 public:
     EnglishEditor (PinyinProperties &props, Config & config);
@@ -62,11 +64,17 @@ private:
     gboolean processEditKey(guint keyval);
     gboolean processPageKey(guint keyval);
 
+    bool train(const char * word, float delta);
+
     /* variables */
     LookupTable m_lookup_table;
 
     String m_preedit_text;
     String m_auxiliary_text;
+
+    std::unique_ptr<EnglishDatabase> * m_english_database;
+
+    static const float train_factor;
 };
 
 };

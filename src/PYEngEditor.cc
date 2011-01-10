@@ -55,6 +55,8 @@ static const char * SQL_DB_INSERT =
 
 namespace PY {
 
+const float EnglishEditor::train_factor = 0.1;
+
 class EnglishDatabase{
 private:
     sqlite3 * m_sqlite;
@@ -390,8 +392,10 @@ EnglishEditor::processEnter(guint keyval){
     if ( m_text.length () == 0 )
         return FALSE;
 
-    Text text(m_text);
+    String preedit = m_text.substr(1);
+    Text text(preedit);
     commitText (text);
+    train (preedit.c_str(), train_factor);
     reset ();
     return TRUE;
 }
@@ -434,6 +438,7 @@ EnglishEditor::selectCandidate (guint index)
     IBusText * candidate = m_lookup_table.getCandidate(index);
     Text text(candidate);
     commitText (text);
+    train (candidate->text, train_factor);
     reset ();
     return TRUE;
 }
@@ -598,6 +603,20 @@ EnglishEditor::removeCharAfter (void)
     return TRUE;
 }
 
+bool
+EnglishEditor::train(const char * word, float delta)
+{
+    float freq = 0;
+    bool retval = m_english_database->getWordInfo (word, freq);
+    if ( retval ) {
+        freq += delta;
+        m_english_database->updateWord(word, freq);
+    } else {
+        m_english_database->insertWord(word, delta);
+    }
+    return true;
+}
+
 #if 0
 
 /* using static initializor to test english database here. */
@@ -611,6 +630,14 @@ public:
         assert(retval);
         retval = db->openDatabase("english.db", "english-user.db");
         assert(retval);
+        float freq = 0;
+        retval = db->getWordInfo("hello", freq);
+        printf("word hello:%d, %f.\n", retval, freq);
+        if ( retval ) {
+            db->updateWord("hello", 0.1);
+        } else {
+            db->insertWord("hello", 0.1);
+        }
         printf("english database test ok.\n");
     }
 } test_english_database;
