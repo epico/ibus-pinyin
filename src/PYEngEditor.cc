@@ -236,6 +236,19 @@ public:
     }
 };
 
+EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
+    : Editor (props, config)
+{
+    m_english_database = new EnglishDatabase;
+    m_english_database->openDatabase("english.db", "english-user.db");
+}
+
+EnglishEditor::~EnglishEditor ()
+{
+    delete m_english_database;
+    m_english_database = NULL;
+}
+
 gboolean
 EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifiers)
 {
@@ -471,7 +484,19 @@ EnglishEditor::updateStateFromInput (void)
     String prefix = m_text.substr(1);
     m_auxiliary_text += prefix;
 
-    /* TODO: implement lookup table candidate fill here. */
+    /* lookup table candidate fill here. */
+    std::vector<std::string> words;
+    bool retval = m_english_database->listWords( prefix.c_str(), words);
+    if ( !retval )
+        return false;
+
+    clearLookupTable();
+    std::vector<std::string>::iterator iter;
+    for (iter = words.begin(); iter != words.end(); ++iter){
+        Text text(*iter);
+        m_lookup_table.appendCandidate(text);
+    }
+    return true;
 }
 
 /* Auxiliary Functions */

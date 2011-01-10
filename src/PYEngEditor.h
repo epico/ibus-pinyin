@@ -33,6 +33,7 @@ class EnglishDatabase;
 class EnglishEditor : public Editor {
 public:
     EnglishEditor (PinyinProperties &props, Config & config);
+    virtual ~EnglishEditor();
 
     virtual gboolean processKeyEvent (guint keyval, guint keycode, guint modifers);
     virtual void pageUp (void);
@@ -72,7 +73,7 @@ private:
     String m_preedit_text;
     String m_auxiliary_text;
 
-    std::unique_ptr<EnglishDatabase> * m_english_database;
+    EnglishDatabase * m_english_database;
 
     static const float train_factor;
 };
