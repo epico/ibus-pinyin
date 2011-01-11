@@ -476,6 +476,7 @@ EnglishEditor::updateStateFromInput (void)
 
     m_auxiliary_text = "v";
     if ( 1 == m_text.length () ) {
+        clearLookupTable ();
         return TRUE;
     }
 
