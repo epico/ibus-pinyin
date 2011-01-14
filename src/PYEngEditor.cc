@@ -127,6 +127,10 @@ public:
                 return false;
         }
 
+        char * dirname = g_path_get_dirname (filename);
+        g_mkdir_with_parents (dirname, 0700);
+        g_free (dirname);
+
         sqlite3 * tmp_db = NULL;
         if ( sqlite3_open_v2 ( filename, &tmp_db,
                                SQLITE_OPEN_READWRITE | 
@@ -240,7 +244,17 @@ EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
     : Editor (props, config)
 {
     m_english_database = new EnglishDatabase;
-    m_english_database->openDatabase("english.db", "english-user.db");
+
+    gchar * path = g_build_filename (g_get_user_config_dir (),
+                                     ".ibus", "pinyin", "english-user.db", NULL);
+
+    bool result = m_english_database->openDatabase
+        (".." G_DIR_SEPARATOR_S "data" G_DIR_SEPARATOR_S "english.db",
+         "english-user.db") ||
+        m_english_database->openDatabase
+        (PKGDATADIR G_DIR_SEPARATOR_S "db" G_DIR_SEPARATOR_S "english.db", path);
+    if (!result)
+        g_warning ("can't open english word list database.\n");
 }
 
 EnglishEditor::~EnglishEditor ()
