@@ -31,5 +31,10 @@ EXTRA_DIST = \
 	$(ENGLISH_DB) \
 	$(NULL)
 
+english_db_DATA = \
+        $(ENGLISH_DB) \
+        $(NULL)
+english_dbdir = $(pkgdatadir)/db
+
 $(ENGLISH_DB): $(WORDLIST)
 	gawk -f english.awk $< |sqlite3 $@
