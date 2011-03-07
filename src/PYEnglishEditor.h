@@ -19,10 +19,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __PY_ENG_EDITOR_
-#define __PY_ENG_EDITOR_
+#ifndef __PY_ENGLISH_EDITOR_
+#define __PY_ENGLISH_EDITOR_
 
 #include "PYEditor.h"
+#include "PYLookupTable.h"
 
 typedef struct sqlite3 sqlite3;
 

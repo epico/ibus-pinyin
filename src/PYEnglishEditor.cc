@@ -19,6 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "PYEnglishEditor.h"
 #include <string.h>
 #include <string>
 #include <vector>
@@ -28,8 +29,6 @@
 #include <glib/gstdio.h>
 #include "PYConfig.h"
 #include "PYString.h"
-#include "PYLookupTable.h"
-#include "PYEnglishEditor.h"
 
 static const char * SQL_CREATE_DB =
     "CREATE TABLE IF NOT EXISTS english ("
