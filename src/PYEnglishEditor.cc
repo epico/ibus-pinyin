@@ -70,16 +70,16 @@ public:
         m_sql = "";
     }
 
-    bool isDatabaseExisted(const char * filename) {
+    gboolean isDatabaseExisted(const char * filename) {
          gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
          if (!result)
-             return false;
+             return FALSE;
 
          sqlite3 * tmp_db = NULL;
          if ( sqlite3_open_v2 ( filename, &tmp_db,
                                 SQLITE_OPEN_READONLY, NULL) != SQLITE_OK ){
              sqlite3_close(tmp_db);
-             return false;
+             return FALSE;
          }
 
          /* Check the desc table */
@@ -90,26 +90,26 @@ public:
          g_assert(result == SQLITE_OK);
          result = sqlite3_step(stmt);
          if ( result != SQLITE_ROW)
-             return false;
+             return FALSE;
          result = sqlite3_column_type (stmt, 0);
          if ( result != SQLITE_TEXT)
-             return false;
+             return FALSE;
          const char * version = (const char *) sqlite3_column_text(stmt, 0);
          if ( strcmp("1.2.0", version ) != 0)
-             return false;
+             return FALSE;
          result = sqlite3_finalize(stmt);
          g_assert ( result == SQLITE_OK);
          sqlite3_close(tmp_db);
-         return true;
+         return TRUE;
     }
 
-    bool createDatabase(const char * filename) {
+    gboolean createDatabase(const char * filename) {
         /* unlink the old database. */
         gboolean retval = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
         if ( retval ) {
             int result = g_unlink(filename);
             if ( result == -1 )
-                return false;
+                return FALSE;
         }
 
         char * dirname = g_path_get_dirname (filename);
@@ -121,7 +121,7 @@ public:
                                SQLITE_OPEN_READWRITE | 
                                SQLITE_OPEN_CREATE, NULL) != SQLITE_OK ) {
             sqlite3_close(tmp_db);
-            return false;
+            return FALSE;
         }
 
         /* Create DESCription table */
@@ -132,45 +132,45 @@ public:
 
         if ( !executeSQL(tmp_db) ) {
             sqlite3_close(tmp_db);
-            return false;
+            return FALSE;
         }
 
         /* Create Schema */
         m_sql = SQL_CREATE_DB;
         if ( !executeSQL(tmp_db) ) {
             sqlite3_close(tmp_db);
-            return false;
+            return FALSE;
         }
-        return true;
+        return TRUE;
     }
 
-    bool openDatabase(const char * system_db, const char * user_db){
+    gboolean openDatabase(const char * system_db, const char * user_db){
         if ( !isDatabaseExisted(system_db) )
-            return false;
+            return FALSE;
         if ( !isDatabaseExisted(user_db)) {
-            bool result = createDatabase(user_db);
+            gboolean result = createDatabase(user_db);
             if ( !result )
-                return false;
+                return FALSE;
         }
         /* do database attach here. :) */
         if ( sqlite3_open_v2( system_db, &m_sqlite,
                               SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK ) {
             sqlite3_close(m_sqlite);
             m_sqlite = NULL;                
-            return false;
+            return FALSE;
         }
 
         m_sql.printf(SQL_ATTACH_DB, user_db);
         if ( !executeSQL(m_sqlite) ) {
             sqlite3_close(m_sqlite);
             m_sqlite = NULL;
-            return false;
+            return FALSE;
         }
-        return true;
+        return TRUE;
     }
 
     /* List the words in freq order. */
-    bool listWords(const char * prefix, std::vector<std::string> & words){
+    gboolean listWords(const char * prefix, std::vector<std::string> & words){
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
         words.clear();
@@ -182,19 +182,19 @@ public:
             /* get the words. */
             result = sqlite3_column_type (stmt, 0);
             if ( result != SQLITE_TEXT)
-                return false;
+                return FALSE;
             const char * word = (const char *)sqlite3_column_text(stmt, 0);
             words.push_back (word);
             result = sqlite3_step(stmt);
         }
         sqlite3_finalize(stmt);
         if ( result != SQLITE_DONE )
-            return false;
-        return true;
+            return FALSE;
+        return TRUE;
     }
 
     /* Get the freq of user sqlite db. */
-    bool getWordInfo(const char * word, float & freq){
+    gboolean getWordInfo(const char * word, float & freq){
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
         m_sql.printf(SQL_DB_SELECT, word);
@@ -202,39 +202,39 @@ public:
         g_assert( result == SQLITE_OK);
         result = sqlite3_step(stmt);
         if ( result != SQLITE_ROW)
-            return false;
+            return FALSE;
         result = sqlite3_column_type(stmt, 0);
         if ( result != SQLITE_FLOAT)
-            return false;
+            return FALSE;
         freq = sqlite3_column_double(stmt, 0);
         result = sqlite3_finalize(stmt);
         g_assert ( result == SQLITE_OK);
-        return true;
+        return TRUE;
     }
 
     /* Update the freq with delta value. */
-    bool updateWord(const char * word, float freq){
+    gboolean updateWord(const char * word, float freq){
         m_sql.printf(SQL_DB_UPDATE, freq, word);
         return executeSQL(m_sqlite);
     }
 
     /* Insert the word into user db with the initial freq. */
-    bool insertWord(const char * word, float freq){
+    gboolean insertWord(const char * word, float freq){
         m_sql.printf(SQL_DB_INSERT, word, freq);
         return executeSQL(m_sqlite);
     }
 
 private:
-    bool executeSQL (sqlite3 * sqlite){
+    gboolean executeSQL (sqlite3 * sqlite){
         gchar * errmsg = NULL;
         if ( sqlite3_exec (sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
              != SQLITE_OK) {
             g_warning ("%s: %s", errmsg, m_sql.c_str());
             sqlite3_free (errmsg);
-            return false;
+            return FALSE;
         }
         m_sql.clear();
-        return true;
+        return TRUE;
     }
 
     sqlite3 * m_sqlite;
