@@ -25,8 +25,6 @@
 #include "PYEditor.h"
 #include "PYLookupTable.h"
 
-typedef struct sqlite3 sqlite3;
-
 namespace PY {
 
 class EnglishDatabase;
