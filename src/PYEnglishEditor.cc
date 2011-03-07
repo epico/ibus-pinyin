@@ -40,7 +40,9 @@ static const char * SQL_ATTACH_DB =
     "ATTACH DATABASE '%s' AS user;";
 
 static const char * SQL_DB_LIST = 
-    "SELECT word FROM ( SELECT * FROM english UNION ALL SELECT * FROM user.english) WHERE word LIKE \"%s%%\" GROUP BY word ORDER BY SUM(freq) DESC;";
+    "SELECT word FROM ( "
+    "SELECT * FROM english UNION ALL SELECT * FROM user.english) "
+    " WHERE word LIKE '%s%%' GROUP BY word ORDER BY SUM(freq) DESC;";
 
 static const char * SQL_DB_SELECT = 
     "SELECT freq FROM user.english WHERE word = \"%s\";";
