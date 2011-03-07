@@ -26,7 +26,7 @@
 #ifdef IBUS_BUILD_LUA_EXTENSION
 #include "PYExtEditor.h"
 #endif
-#include "PYEngEditor.h"
+#include "PYEnglishEditor.h"
 #include "PYFullPinyinEditor.h"
 #include "PYDoublePinyinEditor.h"
 #include "PYFallbackEditor.h"

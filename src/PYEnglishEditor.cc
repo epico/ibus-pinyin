@@ -30,7 +30,7 @@
 #include "PYConfig.h"
 #include "PYString.h"
 #include "PYLookupTable.h"
-#include "PYEngEditor.h"
+#include "PYEnglishEditor.h"
 
 static const char * SQL_CREATE_DB =
     "CREATE TABLE IF NOT EXISTS english ("
