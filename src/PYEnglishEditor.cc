@@ -58,21 +58,6 @@ namespace PY {
 const float EnglishEditor::train_factor = 0.1;
 
 class EnglishDatabase{
-private:
-    sqlite3 * m_sqlite;
-    String m_sql;
-
-    bool executeSQL (sqlite3 * sqlite){
-        gchar * errmsg = NULL;
-        if ( sqlite3_exec (sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
-             != SQLITE_OK) {
-            g_warning ("%s: %s", errmsg, m_sql.c_str());
-            sqlite3_free (errmsg);
-            return false;
-        }
-        m_sql.clear();
-        return true;
-    }
 public:
     EnglishDatabase(){
         m_sqlite = NULL;
@@ -238,6 +223,22 @@ public:
         m_sql.printf(SQL_DB_INSERT, word, freq);
         return executeSQL(m_sqlite);
     }
+
+private:
+    bool executeSQL (sqlite3 * sqlite){
+        gchar * errmsg = NULL;
+        if ( sqlite3_exec (sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
+             != SQLITE_OK) {
+            g_warning ("%s: %s", errmsg, m_sql.c_str());
+            sqlite3_free (errmsg);
+            return false;
+        }
+        m_sql.clear();
+        return true;
+    }
+
+    sqlite3 * m_sqlite;
+    String m_sql;
 };
 
 EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
