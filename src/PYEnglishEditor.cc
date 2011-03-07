@@ -2,7 +2,7 @@
  *
  * ibus-pinyin - The Chinese PinYin engine for IBus
  *
- * Copyright (c) 2010 Peng Wu <alexepico@gmail.com>
+ * Copyright (c) 2010-2011 Peng Wu <alexepico@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <assert.h>
 #include <string.h>
 #include <string>
 #include <vector>
@@ -102,7 +101,7 @@ public:
          const char * tail = NULL;
          m_sql = "SELECT value FROM desc WHERE name = 'version';";
          result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
-         assert(result == SQLITE_OK);
+         g_assert(result == SQLITE_OK);
          result = sqlite3_step(stmt);
          if ( result != SQLITE_ROW)
              return false;
@@ -113,7 +112,7 @@ public:
          if ( strcmp("1.2.0", version ) != 0)
              return false;
          result = sqlite3_finalize(stmt);
-         assert ( result == SQLITE_OK);
+         g_assert ( result == SQLITE_OK);
          sqlite3_close(tmp_db);
          return true;
     }
@@ -191,7 +190,7 @@ public:
         words.clear();
         m_sql.printf(SQL_DB_LIST, prefix);
         int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
-        assert(result == SQLITE_OK);
+        g_assert(result == SQLITE_OK);
         result = sqlite3_step(stmt);
         while ( result == SQLITE_ROW ){
             /* get the words. */
@@ -214,7 +213,7 @@ public:
         const char * tail = NULL;
         m_sql.printf(SQL_DB_SELECT, word);
         int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
-        assert( result == SQLITE_OK);
+        g_assert( result == SQLITE_OK);
         result = sqlite3_step(stmt);
         if ( result != SQLITE_ROW)
             return false;
@@ -223,7 +222,7 @@ public:
             return false;
         freq = sqlite3_column_double(stmt, 0);
         result = sqlite3_finalize(stmt);
-        assert ( result == SQLITE_OK);
+        g_assert ( result == SQLITE_OK);
         return true;
     }
 
@@ -665,11 +664,11 @@ public:
     TestEnglishDatabase(){
         EnglishDatabase * db = new EnglishDatabase();
         bool retval = db->isDatabaseExisted("/tmp/english-user.db");
-        assert(!retval);
+        g_assert(!retval);
         retval = db->createDatabase("english-user.db");
-        assert(retval);
+        g_assert(retval);
         retval = db->openDatabase("english.db", "english-user.db");
-        assert(retval);
+        g_assert(retval);
         float freq = 0;
         retval = db->getWordInfo("hello", freq);
         printf("word hello:%d, %f.\n", retval, freq);

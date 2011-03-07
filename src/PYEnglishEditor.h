@@ -2,7 +2,7 @@
  *
  * ibus-pinyin - The Chinese PinYin engine for IBus
  *
- * Copyright (c) 2010 Peng Wu <alexepico@gmail.com>
+ * Copyright (c) 2010-2011 Peng Wu <alexepico@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
