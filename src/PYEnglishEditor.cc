@@ -65,20 +65,20 @@ public:
     }
 
     ~EnglishDatabase(){
-        sqlite3_close(m_sqlite);
+        sqlite3_close (m_sqlite);
         m_sqlite = NULL;
         m_sql = "";
     }
 
     gboolean isDatabaseExisted(const char * filename) {
-         gboolean result = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
+         gboolean result = g_file_test (filename, G_FILE_TEST_IS_REGULAR);
          if (!result)
              return FALSE;
 
          sqlite3 * tmp_db = NULL;
-         if ( sqlite3_open_v2 ( filename, &tmp_db,
-                                SQLITE_OPEN_READONLY, NULL) != SQLITE_OK ){
-             sqlite3_close(tmp_db);
+         if (sqlite3_open_v2 (filename, &tmp_db,
+                              SQLITE_OPEN_READONLY, NULL) != SQLITE_OK){
+             sqlite3_close (tmp_db);
              return FALSE;
          }
 
@@ -86,29 +86,29 @@ public:
          sqlite3_stmt * stmt = NULL;
          const char * tail = NULL;
          m_sql = "SELECT value FROM desc WHERE name = 'version';";
-         result = sqlite3_prepare_v2( tmp_db, m_sql.c_str(), -1, &stmt, &tail);
-         g_assert(result == SQLITE_OK);
-         result = sqlite3_step(stmt);
-         if ( result != SQLITE_ROW)
+         result = sqlite3_prepare_v2 (tmp_db, m_sql.c_str(), -1, &stmt, &tail);
+         g_assert (result == SQLITE_OK);
+         result = sqlite3_step (stmt);
+         if (result != SQLITE_ROW)
              return FALSE;
          result = sqlite3_column_type (stmt, 0);
-         if ( result != SQLITE_TEXT)
+         if (result != SQLITE_TEXT)
              return FALSE;
-         const char * version = (const char *) sqlite3_column_text(stmt, 0);
-         if ( strcmp("1.2.0", version ) != 0)
+         const char * version = (const char *) sqlite3_column_text (stmt, 0);
+         if (strcmp("1.2.0", version ) != 0)
              return FALSE;
-         result = sqlite3_finalize(stmt);
-         g_assert ( result == SQLITE_OK);
-         sqlite3_close(tmp_db);
+         result = sqlite3_finalize (stmt);
+         g_assert (result == SQLITE_OK);
+         sqlite3_close (tmp_db);
          return TRUE;
     }
 
     gboolean createDatabase(const char * filename) {
         /* unlink the old database. */
-        gboolean retval = g_file_test(filename, G_FILE_TEST_IS_REGULAR);
-        if ( retval ) {
-            int result = g_unlink(filename);
-            if ( result == -1 )
+        gboolean retval = g_file_test (filename, G_FILE_TEST_IS_REGULAR);
+        if (retval) {
+            int result = g_unlink (filename);
+            if (result == -1)
                 return FALSE;
         }
 
@@ -117,10 +117,10 @@ public:
         g_free (dirname);
 
         sqlite3 * tmp_db = NULL;
-        if ( sqlite3_open_v2 ( filename, &tmp_db,
-                               SQLITE_OPEN_READWRITE | 
-                               SQLITE_OPEN_CREATE, NULL) != SQLITE_OK ) {
-            sqlite3_close(tmp_db);
+        if (sqlite3_open_v2 (filename, &tmp_db,
+                             SQLITE_OPEN_READWRITE | 
+                             SQLITE_OPEN_CREATE, NULL) != SQLITE_OK) {
+            sqlite3_close (tmp_db);
             return FALSE;
         }
 
@@ -130,39 +130,39 @@ public:
         m_sql << "INSERT OR IGNORE INTO desc VALUES ('version', '1.2.0');";
         m_sql << "COMMIT;\n";
 
-        if ( !executeSQL(tmp_db) ) {
-            sqlite3_close(tmp_db);
+        if (!executeSQL (tmp_db)) {
+            sqlite3_close (tmp_db);
             return FALSE;
         }
 
         /* Create Schema */
         m_sql = SQL_CREATE_DB;
-        if ( !executeSQL(tmp_db) ) {
-            sqlite3_close(tmp_db);
+        if (!executeSQL (tmp_db)) {
+            sqlite3_close (tmp_db);
             return FALSE;
         }
         return TRUE;
     }
 
     gboolean openDatabase(const char * system_db, const char * user_db){
-        if ( !isDatabaseExisted(system_db) )
+        if (!isDatabaseExisted (system_db))
             return FALSE;
-        if ( !isDatabaseExisted(user_db)) {
-            gboolean result = createDatabase(user_db);
-            if ( !result )
+        if (!isDatabaseExisted (user_db)) {
+            gboolean result = createDatabase (user_db);
+            if (!result)
                 return FALSE;
         }
         /* do database attach here. :) */
-        if ( sqlite3_open_v2( system_db, &m_sqlite,
-                              SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK ) {
-            sqlite3_close(m_sqlite);
+        if (sqlite3_open_v2 (system_db, &m_sqlite,
+                             SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+            sqlite3_close (m_sqlite);
             m_sqlite = NULL;                
             return FALSE;
         }
 
-        m_sql.printf(SQL_ATTACH_DB, user_db);
-        if ( !executeSQL(m_sqlite) ) {
-            sqlite3_close(m_sqlite);
+        m_sql.printf (SQL_ATTACH_DB, user_db);
+        if (!executeSQL (m_sqlite)) {
+            sqlite3_close (m_sqlite);
             m_sqlite = NULL;
             return FALSE;
         }
@@ -173,22 +173,22 @@ public:
     gboolean listWords(const char * prefix, std::vector<std::string> & words){
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
-        words.clear();
-        m_sql.printf(SQL_DB_LIST, prefix);
-        int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
+        words.clear ();
+        m_sql.printf (SQL_DB_LIST, prefix);
+        int result = sqlite3_prepare_v2 (m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
         g_assert(result == SQLITE_OK);
-        result = sqlite3_step(stmt);
-        while ( result == SQLITE_ROW ){
+        result = sqlite3_step (stmt);
+        while (result == SQLITE_ROW){
             /* get the words. */
             result = sqlite3_column_type (stmt, 0);
-            if ( result != SQLITE_TEXT)
+            if (result != SQLITE_TEXT)
                 return FALSE;
-            const char * word = (const char *)sqlite3_column_text(stmt, 0);
+            const char * word = (const char *)sqlite3_column_text (stmt, 0);
             words.push_back (word);
-            result = sqlite3_step(stmt);
+            result = sqlite3_step (stmt);
         }
-        sqlite3_finalize(stmt);
-        if ( result != SQLITE_DONE )
+        sqlite3_finalize (stmt);
+        if (result != SQLITE_DONE)
             return FALSE;
         return TRUE;
     }
@@ -197,43 +197,43 @@ public:
     gboolean getWordInfo(const char * word, float & freq){
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
-        m_sql.printf(SQL_DB_SELECT, word);
-        int result = sqlite3_prepare_v2( m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
-        g_assert( result == SQLITE_OK);
-        result = sqlite3_step(stmt);
-        if ( result != SQLITE_ROW)
+        m_sql.printf (SQL_DB_SELECT, word);
+        int result = sqlite3_prepare_v2 (m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
+        g_assert (result == SQLITE_OK);
+        result = sqlite3_step (stmt);
+        if (result != SQLITE_ROW)
             return FALSE;
-        result = sqlite3_column_type(stmt, 0);
-        if ( result != SQLITE_FLOAT)
+        result = sqlite3_column_type (stmt, 0);
+        if (result != SQLITE_FLOAT)
             return FALSE;
-        freq = sqlite3_column_double(stmt, 0);
-        result = sqlite3_finalize(stmt);
-        g_assert ( result == SQLITE_OK);
+        freq = sqlite3_column_double (stmt, 0);
+        result = sqlite3_finalize (stmt);
+        g_assert (result == SQLITE_OK);
         return TRUE;
     }
 
     /* Update the freq with delta value. */
     gboolean updateWord(const char * word, float freq){
-        m_sql.printf(SQL_DB_UPDATE, freq, word);
-        return executeSQL(m_sqlite);
+        m_sql.printf (SQL_DB_UPDATE, freq, word);
+        return executeSQL (m_sqlite);
     }
 
     /* Insert the word into user db with the initial freq. */
     gboolean insertWord(const char * word, float freq){
-        m_sql.printf(SQL_DB_INSERT, word, freq);
-        return executeSQL(m_sqlite);
+        m_sql.printf (SQL_DB_INSERT, word, freq);
+        return executeSQL (m_sqlite);
     }
 
 private:
-    gboolean executeSQL (sqlite3 * sqlite){
+    gboolean executeSQL(sqlite3 * sqlite){
         gchar * errmsg = NULL;
-        if ( sqlite3_exec (sqlite, m_sql.c_str(), NULL, NULL, &errmsg)
+        if (sqlite3_exec (sqlite, m_sql.c_str (), NULL, NULL, &errmsg)
              != SQLITE_OK) {
             g_warning ("%s: %s", errmsg, m_sql.c_str());
             sqlite3_free (errmsg);
             return FALSE;
         }
-        m_sql.clear();
+        m_sql.clear ();
         return TRUE;
     }
 
@@ -274,7 +274,7 @@ EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifiers)
                   IBUS_HYPER_MASK |
                   IBUS_META_MASK |
                   IBUS_LOCK_MASK);
-    if ( modifiers )
+    if (modifiers)
         return FALSE;
 
     //handle backspace/delete here.
@@ -301,7 +301,7 @@ EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifiers)
     switch (m_cursor) {
     case 0: //Empty input string
         {
-            g_return_val_if_fail ( 'v' == keyval, FALSE);
+            g_return_val_if_fail ('v' == keyval, FALSE);
             if ( 'v' == keyval ) {
                 m_text.insert (m_cursor, keyval);
                 m_cursor++;
@@ -310,7 +310,7 @@ EnglishEditor::processKeyEvent (guint keyval, guint keycode, guint modifiers)
         break;
     default: //append string
         {
-            g_return_val_if_fail ( 'v' == m_text[0], FALSE);
+            g_return_val_if_fail ('v' == m_text[0], FALSE);
             if (isalpha (keyval)) {
                 m_text.insert (m_cursor, keyval);
                 m_cursor++;
@@ -414,13 +414,13 @@ EnglishEditor::processLabelKey (guint keyval)
 
 gboolean
 EnglishEditor::processEnter(guint keyval){
-    if ( keyval != IBUS_Return )
+    if (keyval != IBUS_Return)
         return FALSE;
 
-    if ( m_text.length () == 0 )
+    if (m_text.length () == 0)
         return FALSE;
 
-    String preedit = m_text.substr(1);
+    String preedit = m_text.substr (1);
     Text text(preedit);
     commitText (text);
     train (preedit.c_str(), train_factor);
@@ -441,7 +441,7 @@ EnglishEditor::processSpace(guint keyval)
 void
 EnglishEditor::candidateClicked (guint index, guint button, guint state)
 {
-    selectCandidateInPage(index);
+    selectCandidateInPage (index);
 }
 
 gboolean
@@ -460,10 +460,10 @@ EnglishEditor::selectCandidateInPage (guint index)
 gboolean
 EnglishEditor::selectCandidate (guint index)
 {
-    if ( index >= m_lookup_table.size ())
+    if (index >= m_lookup_table.size ())
         return FALSE;
 
-    IBusText * candidate = m_lookup_table.getCandidate(index);
+    IBusText * candidate = m_lookup_table.getCandidate (index);
     Text text(candidate);
     commitText (text);
     train (candidate->text, train_factor);
@@ -476,7 +476,7 @@ EnglishEditor::updateStateFromInput (void)
 {
     /* Do parse and candidates update here. */
     /* prefix v double check here. */
-    if ( !m_text.length () ) {
+    if (!m_text.length ()) {
         m_preedit_text = "";
         m_auxiliary_text = "";
         m_cursor = 0;
@@ -484,33 +484,33 @@ EnglishEditor::updateStateFromInput (void)
         return FALSE;
     }
 
-    if ( ! 'v' == m_text[0] ){
+    if (!'v' == m_text[0]) {
         g_warning ("v is expected in m_text string.\n");
         return FALSE;
     }
 
     m_auxiliary_text = "v";
-    if ( 1 == m_text.length () ) {
+    if (1 == m_text.length ()) {
         clearLookupTable ();
         return TRUE;
     }
 
     m_auxiliary_text += " ";
 
-    String prefix = m_text.substr(1);
+    String prefix = m_text.substr (1);
     m_auxiliary_text += prefix;
 
     /* lookup table candidate fill here. */
     std::vector<std::string> words;
-    bool retval = m_english_database->listWords( prefix.c_str(), words);
-    if ( !retval )
+    bool retval = m_english_database->listWords (prefix.c_str(), words);
+    if (!retval)
         return false;
 
-    clearLookupTable();
+    clearLookupTable ();
     std::vector<std::string>::iterator iter;
-    for (iter = words.begin(); iter != words.end(); ++iter){
+    for (iter = words.begin (); iter != words.end (); ++iter){
         Text text(*iter);
-        m_lookup_table.appendCandidate(text);
+        m_lookup_table.appendCandidate (text);
     }
     return true;
 }
@@ -520,32 +520,32 @@ EnglishEditor::updateStateFromInput (void)
 void
 EnglishEditor::pageUp (void)
 {
-    if ( G_LIKELY(m_lookup_table.pageUp ())) {
-        update();
+    if (G_LIKELY(m_lookup_table.pageUp ())) {
+        update ();
     }
 }
 
 void
 EnglishEditor::pageDown (void)
 {
-    if ( G_LIKELY(m_lookup_table.pageDown ())) {
-        update();
+    if (G_LIKELY(m_lookup_table.pageDown ())) {
+        update ();
     }
 }
 
 void
 EnglishEditor::cursorUp (void)
 {
-    if ( G_LIKELY(m_lookup_table.cursorUp ())) {
-        update();
+    if (G_LIKELY(m_lookup_table.cursorUp ())) {
+        update ();
     }
 }
 
 void
 EnglishEditor::cursorDown (void)
 {
-    if ( G_LIKELY(m_lookup_table.cursorDown())) {
-        update();
+    if (G_LIKELY(m_lookup_table.cursorDown ())) {
+        update ();
     }
 }
 
@@ -587,36 +587,36 @@ EnglishEditor::updateLookupTable (void)
 void
 EnglishEditor::updatePreeditText (void)
 {
-    if ( G_UNLIKELY(m_preedit_text.empty ()) ) {
+    if (G_UNLIKELY(m_preedit_text.empty ())) {
         hidePreeditText ();
         return;
     }
 
-    StaticText preedit_text (m_preedit_text);
+    StaticText preedit_text(m_preedit_text);
     Editor::updatePreeditText (preedit_text, m_cursor, TRUE);
 }
 
 void
 EnglishEditor::updateAuxiliaryText (void)
 {
-    if ( G_UNLIKELY(m_auxiliary_text.empty ()) ) {
+    if (G_UNLIKELY(m_auxiliary_text.empty ())) {
         hideAuxiliaryText ();
         return;
     }
     
-    StaticText aux_text (m_auxiliary_text);
+    StaticText aux_text(m_auxiliary_text);
     Editor::updateAuxiliaryText (aux_text, TRUE);
 }
 
 gboolean
 EnglishEditor::removeCharBefore (void)
 {
-    if (G_UNLIKELY( m_cursor <= 0 )) {
+    if (G_UNLIKELY(m_cursor <= 0)) {
         m_cursor = 0;
         return FALSE;
     }
 
-    if (G_UNLIKELY( m_cursor > m_text.length () )) {
+    if (G_UNLIKELY(m_cursor > m_text.length ())) {
         m_cursor = m_text.length ();
         return FALSE;
     }
@@ -629,12 +629,12 @@ EnglishEditor::removeCharBefore (void)
 gboolean
 EnglishEditor::removeCharAfter (void)
 {
-    if (G_UNLIKELY( m_cursor < 0 )) {
+    if (G_UNLIKELY(m_cursor < 0)) {
         m_cursor = 0;
         return FALSE;
     }
 
-    if (G_UNLIKELY( m_cursor >= m_text.length () )) {
+    if (G_UNLIKELY(m_cursor >= m_text.length ())) {
         m_cursor = m_text.length ();
         return FALSE;
     }
@@ -649,11 +649,11 @@ EnglishEditor::train(const char * word, float delta)
 {
     float freq = 0;
     bool retval = m_english_database->getWordInfo (word, freq);
-    if ( retval ) {
+    if (retval) {
         freq += delta;
-        m_english_database->updateWord(word, freq);
+        m_english_database->updateWord (word, freq);
     } else {
-        m_english_database->insertWord(word, delta);
+        m_english_database->insertWord (word, delta);
     }
     return true;
 }
@@ -664,22 +664,22 @@ EnglishEditor::train(const char * word, float delta)
 static class TestEnglishDatabase{
 public:
     TestEnglishDatabase(){
-        EnglishDatabase * db = new EnglishDatabase();
-        bool retval = db->isDatabaseExisted("/tmp/english-user.db");
-        g_assert(!retval);
-        retval = db->createDatabase("english-user.db");
-        g_assert(retval);
-        retval = db->openDatabase("english.db", "english-user.db");
-        g_assert(retval);
+        EnglishDatabase * db = new EnglishDatabase ();
+        bool retval = db->isDatabaseExisted ("/tmp/english-user.db");
+        g_assert (!retval);
+        retval = db->createDatabase ("english-user.db");
+        g_assert (retval);
+        retval = db->openDatabase ("english.db", "english-user.db");
+        g_assert (retval);
         float freq = 0;
-        retval = db->getWordInfo("hello", freq);
-        printf("word hello:%d, %f.\n", retval, freq);
-        if ( retval ) {
-            db->updateWord("hello", 0.1);
+        retval = db->getWordInfo ("hello", freq);
+        printf ("word hello:%d, %f.\n", retval, freq);
+        if (retval) {
+            db->updateWord ("hello", 0.1);
         } else {
-            db->insertWord("hello", 0.1);
+            db->insertWord ("hello", 0.1);
         }
-        printf("english database test ok.\n");
+        printf ("english database test ok.\n");
     }
 } test_english_database;
 
