@@ -256,53 +256,66 @@ private:
     }
 
     gboolean loadUserDB (void){
-        /* Attach user database */
-        const char * SQL_ATTACH_DB =
-            "ATTACH DATABASE ':memory' AS userdb;";
-        m_sql.printf (SQL_ATTACH_DB);
-        if (!executeSQL (m_sql))
-            break;
-
         sqlite3 * userdb =  NULL;
-        /* Note: user db is always created by openDatabase. */
-        if (sqlite3_open_v2 ( m_user_db, &userdb,
-                              SQLITE_OPEN_READWRITE |
-                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
-            break;
+        /* Attach user database */
+        do {
+            const char * SQL_ATTACH_DB =
+                "ATTACH DATABASE ':memory:' AS userdb;";
+            m_sql.printf (SQL_ATTACH_DB);
+            if (!executeSQL (m_sqlite))
+                break;
 
-        sqlite3_backup * backup = sqlite3_backup_init (m_sqlite, "userdb", userdb, "main");
+            /* Note: user db is always created by openDatabase. */
+            if (sqlite3_open_v2 ( m_user_db, &userdb,
+                                  SQLITE_OPEN_READWRITE |
+                                  SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
+                break;
 
-        if (backup) {
-            sqlite3_backup_step (backup, -1);
-            sqlite3_backup_finish (backup);
-        }
+            sqlite3_backup * backup = sqlite3_backup_init (m_sqlite, "userdb", userdb, "main");
 
-        sqlite3_close (userdb);
-        return TRUE;
+            if (backup) {
+                sqlite3_backup_step (backup, -1);
+                sqlite3_backup_finish (backup);
+            }
+
+            sqlite3_close (userdb);
+            return TRUE;
+        } while (0);
+
+        if (userdb)
+            sqlite3_close (userdb);
+        return FALSE;
     }
 
     gboolean saveUserDB (void){
-        String tmpfile = String(m_user_db) + "-tmp";
         sqlite3 * userdb = NULL;
-        /* remove tmpfile if it exist */
-        g_unlink(tmpfile);
+        String tmpfile = String(m_user_db) + "-tmp";
+        do {
+            /* remove tmpfile if it exist */
+            g_unlink(tmpfile);
 
-        if (sqlite3_open_v2 (tmpfile, &userdb,
-                             SQLITE_OPEN_READWRITE |
-                             SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
-            break;
+            if (sqlite3_open_v2 (tmpfile, &userdb,
+                                 SQLITE_OPEN_READWRITE |
+                                 SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
+                break;
 
-        sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "userdb");
+            sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "userdb");
 
-        if (backup == NULL)
-            break;
+            if (backup == NULL)
+                break;
 
-        sqlite3_backup_step (backup, -1);
-        sqlite3_backup_finish (backup);
-        sqlite3_close (backup);
+            sqlite3_backup_step (backup, -1);
+            sqlite3_backup_finish (backup);
+            sqlite3_close (userdb);
 
-        g_rename(tmpfile, m_user_db);
-        return TRUE;
+            g_rename(tmpfile, m_user_db);
+            return TRUE;
+        } while (0);
+
+        if (userdb)
+            sqlite3_close (userdb);
+        g_unlink (tmpfile);
+        return FALSE;
     }
 
     void modified (void){
@@ -318,12 +331,12 @@ private:
     }
 
     static gboolean timeoutCallback (gpointer data){
-        EnglishDatabase * self = static_cast<EnglishDatabase> * (data);
+        EnglishDatabase * self = static_cast<EnglishDatabase *> (data);
 
         /* Get elapsed time since last modification of database. */
         guint elapsed = (guint) g_timer_elapsed (self->m_timer, NULL);
 
-        if (elapsed >= DB_BACKUP_TIMEOUT && 
+        if (elapsed >= DB_BACKUP_TIMEOUT &&
             self->saveUserDB ()) {
             self->m_timeout_id = 0;
             return FALSE;
