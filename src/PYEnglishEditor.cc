@@ -30,28 +30,6 @@
 #include "PYConfig.h"
 #include "PYString.h"
 
-static const char * SQL_CREATE_DB =
-    "CREATE TABLE IF NOT EXISTS english ("
-    "word TEXT NOT NULL PRIMARY KEY,"
-    "freq FLOAT NOT NULL DEFAULT(0)"
-    ");";
-
-static const char * SQL_ATTACH_DB =
-    "ATTACH DATABASE ':memory' AS user;";
-
-static const char * SQL_DB_LIST = 
-    "SELECT word FROM ( "
-    "SELECT * FROM english UNION ALL SELECT * FROM user.english) "
-    " WHERE word LIKE '%s%%' GROUP BY word ORDER BY SUM(freq) DESC;";
-
-static const char * SQL_DB_SELECT = 
-    "SELECT freq FROM user.english WHERE word = \"%s\";";
-
-static const char * SQL_DB_UPDATE =
-    "UPDATE user.english SET freq = \"%f\" WHERE word = \"%s\";";
-
-static const char * SQL_DB_INSERT =
-    "INSERT INTO user.english (word, freq) VALUES (\"%s\", \"%f\");";
 
 namespace PY {
 
@@ -148,6 +126,11 @@ public:
         }
 
         /* Create Schema */
+        const char * SQL_CREATE_DB =
+            "CREATE TABLE IF NOT EXISTS english ("
+            "word TEXT NOT NULL PRIMARY KEY,"
+            "freq FLOAT NOT NULL DEFAULT(0)"
+            ");";
         m_sql = SQL_CREATE_DB;
         if (!executeSQL (tmp_db)) {
             sqlite3_close (tmp_db);
@@ -192,6 +175,12 @@ public:
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
         words.clear ();
+
+        /* list words */
+        const char * SQL_DB_LIST = 
+            "SELECT word FROM ( "
+            "SELECT * FROM english UNION ALL SELECT * FROM userdb.english) "
+            " WHERE word LIKE '%s%%' GROUP BY word ORDER BY SUM(freq) DESC;";
         m_sql.printf (SQL_DB_LIST, prefix);
         int result = sqlite3_prepare_v2 (m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
         g_assert(result == SQLITE_OK);
@@ -215,6 +204,9 @@ public:
     gboolean getWordInfo(const char * word, float & freq){
         sqlite3_stmt * stmt = NULL;
         const char * tail = NULL;
+        /* get word info. */
+        const char * SQL_DB_SELECT = 
+            "SELECT freq FROM userdb.english WHERE word = \"%s\";";
         m_sql.printf (SQL_DB_SELECT, word);
         int result = sqlite3_prepare_v2 (m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
         g_assert (result == SQLITE_OK);
@@ -232,6 +224,8 @@ public:
 
     /* Update the freq with delta value. */
     gboolean updateWord(const char * word, float freq){
+        const char * SQL_DB_UPDATE =
+            "UPDATE userdb.english SET freq = \"%f\" WHERE word = \"%s\";";
         m_sql.printf (SQL_DB_UPDATE, freq, word);
         gboolean retval =  executeSQL (m_sqlite);
         modified ();
@@ -240,6 +234,8 @@ public:
 
     /* Insert the word into user db with the initial freq. */
     gboolean insertWord(const char * word, float freq){
+        const char * SQL_DB_INSERT =
+            "INSERT INTO userdb.english (word, freq) VALUES (\"%s\", \"%f\");";
         m_sql.printf (SQL_DB_INSERT, word, freq);
         gboolean retval = executeSQL (m_sqlite);
         modified ();
@@ -261,7 +257,9 @@ private:
 
     gboolean loadUserDB (void){
         /* Attach user database */
-        m_sql.printf ("ATTACH DATABASE \":memory:\" AS userdb;");
+        const char * SQL_ATTACH_DB =
+            "ATTACH DATABASE ':memory' AS userdb;";
+        m_sql.printf (SQL_ATTACH_DB);
         if (!executeSQL (m_sql))
             break;
 
@@ -294,7 +292,7 @@ private:
                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
             break;
 
-        sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "main");
+        sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "userdb");
 
         if (backup == NULL)
             break;
