@@ -37,7 +37,7 @@ static const char * SQL_CREATE_DB =
     ");";
 
 static const char * SQL_ATTACH_DB =
-    "ATTACH DATABASE '%s' AS user;";
+    "ATTACH DATABASE ':memory' AS user;";
 
 static const char * SQL_DB_LIST = 
     "SELECT word FROM ( "
@@ -55,17 +55,31 @@ static const char * SQL_DB_INSERT =
 
 namespace PY {
 
+#define DB_BACKUP_TIMEOUT   (60)
+
 class EnglishDatabase{
 public:
     EnglishDatabase(){
         m_sqlite = NULL;
         m_sql = "";
+        m_user_db = "";
+        m_timeout_id = 0;
+        m_timer = g_timer_new ();
     }
 
     ~EnglishDatabase(){
-        sqlite3_close (m_sqlite);
-        m_sqlite = NULL;
+        g_timer_destroy (m_timer);
+        if (m_timeout_id != 0) {
+            saveUserDB ();
+            g_source_remove (m_timeout_id);
+        }
+
+        if (m_sqlite){
+            sqlite3_close (m_sqlite);
+            m_sqlite = NULL;
+        }
         m_sql = "";
+        m_user_db = NULL;
     }
 
     gboolean isDatabaseExisted(const char * filename) {
@@ -150,14 +164,18 @@ public:
             if (!result)
                 return FALSE;
         }
+        /* cache the user db name. */
+        m_user_db = user_db;
+
         /* do database attach here. :) */
         if (sqlite3_open_v2 (system_db, &m_sqlite,
-                             SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+                             SQLITE_OPEN_READONLY, NULL) != SQLITE_OK) {
             sqlite3_close (m_sqlite);
             m_sqlite = NULL;                
             return FALSE;
         }
 
+#if 0
         m_sql.printf (SQL_ATTACH_DB, user_db);
         if (!executeSQL (m_sqlite)) {
             sqlite3_close (m_sqlite);
@@ -165,6 +183,8 @@ public:
             return FALSE;
         }
         return TRUE;
+#endif
+        return loadUserDB();
     }
 
     /* List the words in freq order. */
@@ -213,13 +233,17 @@ public:
     /* Update the freq with delta value. */
     gboolean updateWord(const char * word, float freq){
         m_sql.printf (SQL_DB_UPDATE, freq, word);
-        return executeSQL (m_sqlite);
+        gboolean retval =  executeSQL (m_sqlite);
+        modified ();
+        return retval;
     }
 
     /* Insert the word into user db with the initial freq. */
     gboolean insertWord(const char * word, float freq){
         m_sql.printf (SQL_DB_INSERT, word, freq);
-        return executeSQL (m_sqlite);
+        gboolean retval = executeSQL (m_sqlite);
+        modified ();
+        return retval;
     }
 
 private:
@@ -235,8 +259,87 @@ private:
         return TRUE;
     }
 
+    gboolean loadUserDB (void){
+        /* Attach user database */
+        m_sql.printf ("ATTACH DATABASE \":memory:\" AS userdb;");
+        if (!executeSQL (m_sql))
+            break;
+
+        sqlite3 * userdb =  NULL;
+        /* Note: user db is always created by openDatabase. */
+        if (sqlite3_open_v2 ( m_user_db, &userdb,
+                              SQLITE_OPEN_READWRITE |
+                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
+            break;
+
+        sqlite3_backup * backup = sqlite3_backup_init (m_sqlite, "userdb", userdb, "main");
+
+        if (backup) {
+            sqlite3_backup_step (backup, -1);
+            sqlite3_backup_finish (backup);
+        }
+
+        sqlite3_close (userdb);
+        return TRUE;
+    }
+
+    gboolean saveUserDB (void){
+        String tmpfile = String(m_user_db) + "-tmp";
+        sqlite3 * userdb = NULL;
+        /* remove tmpfile if it exist */
+        g_unlink(tmpfile);
+
+        if (sqlite3_open_v2 (tmpfile, &userdb,
+                             SQLITE_OPEN_READWRITE |
+                             SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
+            break;
+
+        sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "main");
+
+        if (backup == NULL)
+            break;
+
+        sqlite3_backup_step (backup, -1);
+        sqlite3_backup_finish (backup);
+        sqlite3_close (backup);
+
+        g_rename(tmpfile, m_user_db);
+        return TRUE;
+    }
+
+    void modified (void){
+        /* Restart the timer */
+        g_timer_start (m_timer);
+
+        if (m_timeout_id != 0)
+            return;
+
+        m_timeout_id = g_timeout_add_seconds (DB_BACKUP_TIMEOUT,
+                                              EnglishDatabase::timeoutCallback,
+                                              static_cast<gpointer> (this));
+    }
+
+    static gboolean timeoutCallback (gpointer data){
+        EnglishDatabase * self = static_cast<EnglishDatabase> * (data);
+
+        /* Get elapsed time since last modification of database. */
+        guint elapsed = (guint) g_timer_elapsed (self->m_timer, NULL);
+
+        if (elapsed >= DB_BACKUP_TIMEOUT && 
+            self->saveUserDB ()) {
+            self->m_timeout_id = 0;
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+
     sqlite3 * m_sqlite;
     String m_sql;
+    const char * m_user_db;
+
+    guint m_timeout_id;
+    GTimer *m_timer;
 };
 
 EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
@@ -244,8 +347,8 @@ EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
 {
     m_english_database = new EnglishDatabase;
 
-    gchar * path = g_build_filename (g_get_user_config_dir (),
-                                     ".ibus", "pinyin", "english-user.db", NULL);
+    gchar * path = g_build_filename (g_get_user_cache_dir (),
+                                     "ibus", "pinyin", "english-user.db", NULL);
 
     bool result = m_english_database->openDatabase
         (".." G_DIR_SEPARATOR_S "data" G_DIR_SEPARATOR_S "english.db",
