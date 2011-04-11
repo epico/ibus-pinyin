@@ -55,8 +55,6 @@ static const char * SQL_DB_INSERT =
 
 namespace PY {
 
-const float EnglishEditor::train_factor = 0.1;
-
 class EnglishDatabase{
 public:
     EnglishDatabase(){
@@ -242,7 +240,7 @@ private:
 };
 
 EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
-    : Editor (props, config)
+    : Editor (props, config), m_train_factor (0.1)
 {
     m_english_database = new EnglishDatabase;
 
@@ -423,7 +421,7 @@ EnglishEditor::processEnter(guint keyval){
     String preedit = m_text.substr (1);
     Text text(preedit);
     commitText (text);
-    train (preedit.c_str(), train_factor);
+    train (preedit.c_str(), m_train_factor);
     reset ();
     return TRUE;
 }
@@ -466,7 +464,7 @@ EnglishEditor::selectCandidate (guint index)
     IBusText * candidate = m_lookup_table.getCandidate (index);
     Text text(candidate);
     commitText (text);
-    train (candidate->text, train_factor);
+    train (candidate->text, m_train_factor);
     reset ();
     return TRUE;
 }

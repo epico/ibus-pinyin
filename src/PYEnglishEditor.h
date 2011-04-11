@@ -30,6 +30,8 @@ namespace PY {
 class EnglishDatabase;
 
 class EnglishEditor : public Editor {
+private:
+    const float m_train_factor;
 public:
     EnglishEditor (PinyinProperties &props, Config & config);
     virtual ~EnglishEditor();
@@ -73,8 +75,6 @@ private:
     String m_auxiliary_text;
 
     EnglishDatabase * m_english_database;
-
-    static const float train_factor;
 };
 
 };
