@@ -152,9 +152,10 @@ public:
 
         /* do database attach here. :) */
         if (sqlite3_open_v2 (system_db, &m_sqlite,
-                             SQLITE_OPEN_READONLY, NULL) != SQLITE_OK) {
+                             SQLITE_OPEN_READWRITE |
+                             SQLITE_OPEN_CREATE, NULL) != SQLITE_OK) {
             sqlite3_close (m_sqlite);
-            m_sqlite = NULL;                
+            m_sqlite = NULL;
             return FALSE;
         }
 
