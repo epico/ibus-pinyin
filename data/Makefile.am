@@ -19,6 +19,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 WORDLIST = wordlist
+ENGLISH_AWK = english.awk
 ENGLISH_DB = english.db
 
 SUBDIRS = \
@@ -28,7 +29,8 @@ SUBDIRS = \
 
 
 EXTRA_DIST = \
-	$(ENGLISH_DB) \
+	$(WORDLIST) \
+	$(ENGLISH_AWK) \
 	$(NULL)
 
 english_db_DATA = \
