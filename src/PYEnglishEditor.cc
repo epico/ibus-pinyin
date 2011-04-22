@@ -124,12 +124,10 @@ public:
         }
 
         /* Create Schema */
-        const char *SQL_CREATE_DB =
-            "CREATE TABLE IF NOT EXISTS english ("
-            "word TEXT NOT NULL PRIMARY KEY,"
-            "freq FLOAT NOT NULL DEFAULT(0)"
-            ");";
-        m_sql = SQL_CREATE_DB;
+        m_sql = "CREATE TABLE IF NOT EXISTS english ("
+                "word TEXT NOT NULL PRIMARY KEY,"
+                "freq FLOAT NOT NULL DEFAULT(0)"
+                ");";
         if (!executeSQL (tmp_db)) {
             sqlite3_close (tmp_db);
             return FALSE;
