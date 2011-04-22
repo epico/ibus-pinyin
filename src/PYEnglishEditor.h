@@ -66,7 +66,7 @@ private:
     gboolean processEditKey(guint keyval);
     gboolean processPageKey(guint keyval);
 
-    bool train(const char * word, float delta);
+    bool train(const char *word, float delta);
 
     /* variables */
     LookupTable m_lookup_table;
@@ -74,7 +74,7 @@ private:
     String m_preedit_text;
     String m_auxiliary_text;
 
-    EnglishDatabase * m_english_database;
+    EnglishDatabase *m_english_database;
 };
 
 };

@@ -60,12 +60,12 @@ public:
         m_user_db = NULL;
     }
 
-    gboolean isDatabaseExisted(const char * filename) {
+    gboolean isDatabaseExisted(const char *filename) {
          gboolean result = g_file_test (filename, G_FILE_TEST_IS_REGULAR);
          if (!result)
              return FALSE;
 
-         sqlite3 * tmp_db = NULL;
+         sqlite3 *tmp_db = NULL;
          if (sqlite3_open_v2 (filename, &tmp_db,
                               SQLITE_OPEN_READONLY, NULL) != SQLITE_OK){
              sqlite3_close (tmp_db);
@@ -73,8 +73,8 @@ public:
          }
 
          /* Check the desc table */
-         sqlite3_stmt * stmt = NULL;
-         const char * tail = NULL;
+         sqlite3_stmt *stmt = NULL;
+         const char *tail = NULL;
          m_sql = "SELECT value FROM desc WHERE name = 'version';";
          result = sqlite3_prepare_v2 (tmp_db, m_sql.c_str(), -1, &stmt, &tail);
          g_assert (result == SQLITE_OK);
@@ -84,7 +84,7 @@ public:
          result = sqlite3_column_type (stmt, 0);
          if (result != SQLITE_TEXT)
              return FALSE;
-         const char * version = (const char *) sqlite3_column_text (stmt, 0);
+         const char *version = (const char *) sqlite3_column_text (stmt, 0);
          if (strcmp("1.2.0", version ) != 0)
              return FALSE;
          result = sqlite3_finalize (stmt);
@@ -93,7 +93,7 @@ public:
          return TRUE;
     }
 
-    gboolean createDatabase(const char * filename) {
+    gboolean createDatabase(const char *filename) {
         /* unlink the old database. */
         gboolean retval = g_file_test (filename, G_FILE_TEST_IS_REGULAR);
         if (retval) {
@@ -102,11 +102,11 @@ public:
                 return FALSE;
         }
 
-        char * dirname = g_path_get_dirname (filename);
+        char *dirname = g_path_get_dirname (filename);
         g_mkdir_with_parents (dirname, 0700);
         g_free (dirname);
 
-        sqlite3 * tmp_db = NULL;
+        sqlite3 *tmp_db = NULL;
         if (sqlite3_open_v2 (filename, &tmp_db,
                              SQLITE_OPEN_READWRITE | 
                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK) {
@@ -126,7 +126,7 @@ public:
         }
 
         /* Create Schema */
-        const char * SQL_CREATE_DB =
+        const char *SQL_CREATE_DB =
             "CREATE TABLE IF NOT EXISTS english ("
             "word TEXT NOT NULL PRIMARY KEY,"
             "freq FLOAT NOT NULL DEFAULT(0)"
@@ -139,7 +139,7 @@ public:
         return TRUE;
     }
 
-    gboolean openDatabase(const char * system_db, const char * user_db){
+    gboolean openDatabase(const char *system_db, const char *user_db){
         if (!isDatabaseExisted (system_db))
             return FALSE;
         if (!isDatabaseExisted (user_db)) {
@@ -172,13 +172,13 @@ public:
     }
 
     /* List the words in freq order. */
-    gboolean listWords(const char * prefix, std::vector<std::string> & words){
-        sqlite3_stmt * stmt = NULL;
-        const char * tail = NULL;
+    gboolean listWords(const char *prefix, std::vector<std::string> & words){
+        sqlite3_stmt *stmt = NULL;
+        const char *tail = NULL;
         words.clear ();
 
         /* list words */
-        const char * SQL_DB_LIST = 
+        const char *SQL_DB_LIST = 
             "SELECT word FROM ( "
             "SELECT * FROM english UNION ALL SELECT * FROM userdb.english) "
             " WHERE word LIKE '%s%%' GROUP BY word ORDER BY SUM(freq) DESC;";
@@ -191,7 +191,7 @@ public:
             result = sqlite3_column_type (stmt, 0);
             if (result != SQLITE_TEXT)
                 return FALSE;
-            const char * word = (const char *)sqlite3_column_text (stmt, 0);
+            const char *word = (const char *)sqlite3_column_text (stmt, 0);
             words.push_back (word);
             result = sqlite3_step (stmt);
         }
@@ -202,11 +202,11 @@ public:
     }
 
     /* Get the freq of user sqlite db. */
-    gboolean getWordInfo(const char * word, float & freq){
-        sqlite3_stmt * stmt = NULL;
-        const char * tail = NULL;
+    gboolean getWordInfo(const char *word, float & freq){
+        sqlite3_stmt *stmt = NULL;
+        const char *tail = NULL;
         /* get word info. */
-        const char * SQL_DB_SELECT = 
+        const char *SQL_DB_SELECT = 
             "SELECT freq FROM userdb.english WHERE word = \"%s\";";
         m_sql.printf (SQL_DB_SELECT, word);
         int result = sqlite3_prepare_v2 (m_sqlite, m_sql.c_str(), -1, &stmt, &tail);
@@ -224,8 +224,8 @@ public:
     }
 
     /* Update the freq with delta value. */
-    gboolean updateWord(const char * word, float freq){
-        const char * SQL_DB_UPDATE =
+    gboolean updateWord(const char *word, float freq){
+        const char *SQL_DB_UPDATE =
             "UPDATE userdb.english SET freq = \"%f\" WHERE word = \"%s\";";
         m_sql.printf (SQL_DB_UPDATE, freq, word);
         gboolean retval =  executeSQL (m_sqlite);
@@ -234,8 +234,8 @@ public:
     }
 
     /* Insert the word into user db with the initial freq. */
-    gboolean insertWord(const char * word, float freq){
-        const char * SQL_DB_INSERT =
+    gboolean insertWord(const char *word, float freq){
+        const char *SQL_DB_INSERT =
             "INSERT INTO userdb.english (word, freq) VALUES (\"%s\", \"%f\");";
         m_sql.printf (SQL_DB_INSERT, word, freq);
         gboolean retval = executeSQL (m_sqlite);
@@ -244,8 +244,8 @@ public:
     }
 
 private:
-    gboolean executeSQL(sqlite3 * sqlite){
-        gchar * errmsg = NULL;
+    gboolean executeSQL(sqlite3 *sqlite){
+        gchar *errmsg = NULL;
         if (sqlite3_exec (sqlite, m_sql.c_str (), NULL, NULL, &errmsg)
              != SQLITE_OK) {
             g_warning ("%s: %s", errmsg, m_sql.c_str());
@@ -257,10 +257,10 @@ private:
     }
 
     gboolean loadUserDB (void){
-        sqlite3 * userdb =  NULL;
+        sqlite3 *userdb =  NULL;
         /* Attach user database */
         do {
-            const char * SQL_ATTACH_DB =
+            const char *SQL_ATTACH_DB =
                 "ATTACH DATABASE ':memory:' AS userdb;";
             m_sql.printf (SQL_ATTACH_DB);
             if (!executeSQL (m_sqlite))
@@ -272,7 +272,7 @@ private:
                                   SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
                 break;
 
-            sqlite3_backup * backup = sqlite3_backup_init (m_sqlite, "userdb", userdb, "main");
+            sqlite3_backup *backup = sqlite3_backup_init (m_sqlite, "userdb", userdb, "main");
 
             if (backup) {
                 sqlite3_backup_step (backup, -1);
@@ -289,7 +289,7 @@ private:
     }
 
     gboolean saveUserDB (void){
-        sqlite3 * userdb = NULL;
+        sqlite3 *userdb = NULL;
         String tmpfile = String(m_user_db) + "-tmp";
         do {
             /* remove tmpfile if it exist */
@@ -300,7 +300,7 @@ private:
                                  SQLITE_OPEN_CREATE, NULL) != SQLITE_OK)
                 break;
 
-            sqlite3_backup * backup = sqlite3_backup_init (userdb, "main", m_sqlite, "userdb");
+            sqlite3_backup *backup = sqlite3_backup_init (userdb, "main", m_sqlite, "userdb");
 
             if (backup == NULL)
                 break;
@@ -332,7 +332,7 @@ private:
     }
 
     static gboolean timeoutCallback (gpointer data){
-        EnglishDatabase * self = static_cast<EnglishDatabase *> (data);
+        EnglishDatabase *self = static_cast<EnglishDatabase *> (data);
 
         /* Get elapsed time since last modification of database. */
         guint elapsed = (guint) g_timer_elapsed (self->m_timer, NULL);
@@ -346,9 +346,9 @@ private:
         return TRUE;
     }
 
-    sqlite3 * m_sqlite;
+    sqlite3 *m_sqlite;
     String m_sql;
-    const char * m_user_db;
+    const char *m_user_db;
 
     guint m_timeout_id;
     GTimer *m_timer;
@@ -359,7 +359,7 @@ EnglishEditor::EnglishEditor (PinyinProperties & props, Config &config)
 {
     m_english_database = new EnglishDatabase;
 
-    gchar * path = g_build_filename (g_get_user_cache_dir (),
+    gchar *path = g_build_filename (g_get_user_cache_dir (),
                                      "ibus", "pinyin", "english-user.db", NULL);
 
     bool result = m_english_database->openDatabase
@@ -576,7 +576,7 @@ EnglishEditor::selectCandidate (guint index)
     if (index >= m_lookup_table.size ())
         return FALSE;
 
-    IBusText * candidate = m_lookup_table.getCandidate (index);
+    IBusText *candidate = m_lookup_table.getCandidate (index);
     Text text(candidate);
     commitText (text);
     train (candidate->text, m_train_factor);
@@ -777,7 +777,7 @@ EnglishEditor::train(const char * word, float delta)
 static class TestEnglishDatabase{
 public:
     TestEnglishDatabase(){
-        EnglishDatabase * db = new EnglishDatabase ();
+        EnglishDatabase *db = new EnglishDatabase ();
         bool retval = db->isDatabaseExisted ("/tmp/english-user.db");
         g_assert (!retval);
         retval = db->createDatabase ("english-user.db");
