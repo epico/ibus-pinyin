@@ -39,4 +39,4 @@ english_db_DATA = \
 english_dbdir = $(pkgdatadir)/db
 
 $(ENGLISH_DB): $(WORDLIST)
-	gawk -f english.awk $< |sqlite3 $@
+	$(AWK) -f english.awk $< |sqlite3 $@
