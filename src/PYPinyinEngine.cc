@@ -26,7 +26,9 @@
 #ifdef IBUS_BUILD_LUA_EXTENSION
 #include "PYExtEditor.h"
 #endif
+#ifdef IBUS_BUILD_ENGLISH_INPUT_MODE
 #include "PYEnglishEditor.h"
+#endif
 #include "PYFullPinyinEditor.h"
 #include "PYDoublePinyinEditor.h"
 #include "PYFallbackEditor.h"
@@ -55,7 +57,11 @@ PinyinEngine::PinyinEngine (IBusEngine *engine)
 #else
     m_editors[MODE_EXTENSION].reset (new Editor (m_props, PinyinConfig::instance ()));
 #endif
+#ifdef IBUS_BUILD_ENGLISH_INPUT_MODE
     m_editors[MODE_ENGLISH].reset (new EnglishEditor(m_props, PinyinConfig::instance ()));
+#else
+    m_editors[MODE_ENGLISH].reset (new Editor (m_props, PinyinConfig::instance ()));
+#endif
 
     m_props.signalUpdateProperty ().connect (std::bind (&PinyinEngine::updateProperty, this, _1));
 
@@ -125,12 +131,14 @@ PinyinEngine::processKeyEvent (guint keyval, guint keycode, guint modifiers)
                     m_input_mode = MODE_EXTENSION;
                     break;
 #endif
+#ifdef IBUS_BUILD_ENGLISH_INPUT_MODE
                 case IBUS_v:
                     // do not enable english mode when use double pinyin.
                     if (PinyinConfig::instance ().doublePinyin ())
                         break;
                     m_input_mode = MODE_ENGLISH;
                     break;
+#endif
                 }
             }
             else {
