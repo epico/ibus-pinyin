@@ -68,7 +68,6 @@ public:
          sqlite3 *tmp_db = NULL;
          if (sqlite3_open_v2 (filename, &tmp_db,
                               SQLITE_OPEN_READONLY, NULL) != SQLITE_OK){
-             sqlite3_close (tmp_db);
              return FALSE;
          }
 
@@ -110,7 +109,6 @@ public:
         if (sqlite3_open_v2 (filename, &tmp_db,
                              SQLITE_OPEN_READWRITE | 
                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK) {
-            sqlite3_close (tmp_db);
             return FALSE;
         }
 
@@ -154,7 +152,6 @@ public:
         if (sqlite3_open_v2 (system_db, &m_sqlite,
                              SQLITE_OPEN_READWRITE |
                              SQLITE_OPEN_CREATE, NULL) != SQLITE_OK) {
-            sqlite3_close (m_sqlite);
             m_sqlite = NULL;
             return FALSE;
         }
