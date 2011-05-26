@@ -102,6 +102,10 @@ AC_ARG_ENABLE(boost,
         [enable_boost=$enableval],
         [enable_boost=yes]
 )
+
+#check boost
+AX_BOOST_BASE([1.39], [], [enable_boost=no])
+
 if test x"$enable_boost" = x"yes"; then
     # check boost
     BOOST_REQUIRE([1.39])
